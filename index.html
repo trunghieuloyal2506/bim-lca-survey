@@ -847,7 +847,7 @@
 
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="prevSection('sec-g', 'sec-f', true)">Quay lại</button>
-                <button type="submit" class="btn-success">Gửi khảo sát</button>
+                <button type="button" class="btn-success" onclick="submitSurvey()">Gửi khảo sát</button>
             </div>
         </div>
     </form>
@@ -1172,37 +1172,38 @@
 
     // Submit handler
     let surveyResult = {};
-    document.getElementById('survey-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if(!validateSection('sec-g')) return;
+    function submitSurvey() {
+        if (!validateSection('sec-g')) return;
 
-        const formData = new FormData(this);
+        const formData = new FormData(document.getElementById('survey-form'));
         const data = Object.fromEntries(formData.entries());
-        
+
         const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
         const checkData = {};
         checkboxes.forEach(cb => {
-            if(!checkData[cb.name]) checkData[cb.name] = [];
+            if (!checkData[cb.name]) checkData[cb.name] = [];
             checkData[cb.name].push(cb.value);
         });
-        
+
         surveyResult = { ...data, ...checkData, submittedAt: new Date().toISOString() };
-        
+
         // Clear draft
         localStorage.removeItem('bim_lca_draft');
 
         // Show thank you
         document.getElementById('survey-form').style.display = 'none';
-        document.getElementById('progress-container').style.display = 'none';
+        const pc = document.getElementById('progress-container');
+        if (pc) pc.style.display = 'none';
         document.getElementById('thank-you-screen').style.display = 'block';
         window.scrollTo(0, 0);
 
-        // Open Mailto link
-        const subject = encodeURIComponent("Kết quả khảo sát BIM-LCA");
-        const body = encodeURIComponent("Chào NCS,\n\nĐây là file kết quả của tôi (Đính kèm file tải xuống).");
-        window.location.href = `mailto:hieuht25.ncs@hcmute.edu.vn?subject=${subject}&body=${body}`;
-    });
+        // Open Mailto link (delayed slightly so thank-you renders first)
+        setTimeout(() => {
+            const subject = encodeURIComponent("Kết quả khảo sát BIM-LCA");
+            const body = encodeURIComponent("Chào NCS,\n\nĐây là file kết quả của tôi (Đính kèm file tải xuống).");
+            window.open(`mailto:hieuht25.ncs@hcmute.edu.vn?subject=${subject}&body=${body}`);
+        }, 500);
+    }
 
     // Download JSON
     document.getElementById('btn-download').addEventListener('click', function() {
