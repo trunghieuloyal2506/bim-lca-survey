@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phiếu Khảo Sát BIM-LCA</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #2e7d32;
@@ -1170,25 +1171,51 @@
         }
     }
 
+    // Supabase client
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+        'https://omodmvvgxzrmqgehuamk.supabase.co',
+        'sb_publishable_YP44TXvXtwvdKgtq8o_S8A_3jYvMLAE'
+    );
+
     // Submit handler
     let surveyResult = {};
-    function submitSurvey() {
+    async function submitSurvey() {
         if (!validateSection('sec-g')) return;
+
+        // Show loading state
+        const btn = document.querySelector('.btn-success');
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang gửi...';
 
         const formData = new FormData(document.getElementById('survey-form'));
         const data = Object.fromEntries(formData.entries());
-
         const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
         const checkData = {};
         checkboxes.forEach(cb => {
             if (!checkData[cb.name]) checkData[cb.name] = [];
             checkData[cb.name].push(cb.value);
         });
-
         surveyResult = { ...data, ...checkData, submittedAt: new Date().toISOString() };
-
-        // Clear draft
         localStorage.removeItem('bim_lca_draft');
+
+        // Save to Supabase
+        try {
+            const { error } = await supabaseClient
+                .from('survey_responses')
+                .insert([{
+                    a2: data.a2 || null,
+                    a3: data.a3 || null,
+                    a4: data.a4 || null,
+                    b1: data.b1 || null,
+                    b2: data.b2 || null,
+                    response_data: surveyResult
+                }]);
+            if (error) console.error('Supabase error:', error);
+        } catch (err) {
+            console.error('Network error:', err);
+            // Don't block submission even if DB fails
+        }
 
         // Show thank you
         document.getElementById('survey-form').style.display = 'none';
@@ -1197,10 +1224,10 @@
         document.getElementById('thank-you-screen').style.display = 'block';
         window.scrollTo(0, 0);
 
-        // Open Mailto link (delayed slightly so thank-you renders first)
+        // Open Mailto (delayed so thank-you renders first)
         setTimeout(() => {
             const subject = encodeURIComponent("Kết quả khảo sát BIM-LCA");
-            const body = encodeURIComponent("Chào NCS,\n\nĐây là file kết quả của tôi (Đính kèm file tải xuống).");
+            const body = encodeURIComponent("Chào NCS,\n\nTôi đã hoàn thành khảo sát BIM-LCA trực tuyến.");
             window.open(`mailto:hieuht25.ncs@hcmute.edu.vn?subject=${subject}&body=${body}`);
         }, 500);
     }
