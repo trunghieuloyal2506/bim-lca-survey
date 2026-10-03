@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Kết quả Khảo sát BIM-LCA</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f0; color: #333; }
+        header {
+            background: #2e7d32; color: white; padding: 20px 30px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        header h1 { font-size: 1.3rem; }
+        header p { font-size: 0.85rem; opacity: 0.85; }
+        .toolbar {
+            background: white; padding: 14px 30px;
+            display: flex; gap: 12px; align-items: center;
+            border-bottom: 1px solid #ddd; flex-wrap: wrap;
+        }
+        .toolbar span { color: #555; font-size: 0.9rem; }
+        .btn { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
+        .btn-green { background: #2e7d32; color: white; }
+        .btn-green:hover { background: #1b5e20; }
+        .btn-outline { background: white; color: #2e7d32; border: 1.5px solid #2e7d32; }
+        .btn-outline:hover { background: #e8f5e9; }
+        #status { font-size: 0.85rem; color: #666; margin-left: auto; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card {
+            background: white; border-radius: 10px; padding: 20px;
+            text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-top: 4px solid #2e7d32;
+        }
+        .stat-card .num { font-size: 2.2rem; font-weight: 700; color: #2e7d32; }
+        .stat-card .label { font-size: 0.82rem; color: #777; margin-top: 4px; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .chart-card {
+            background: white; border-radius: 10px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .chart-card h3 { font-size: 0.95rem; color: #2e7d32; margin-bottom: 16px; font-weight: 600; }
+        .chart-wrapper { position: relative; height: 250px; }
+        .table-card {
+            background: white; border-radius: 10px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 20px; overflow-x: auto;
+        }
+        .table-card h3 { font-size: 0.95rem; color: #2e7d32; margin-bottom: 14px; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+        th { background: #e8f5e9; color: #2e7d32; padding: 10px 12px; text-align: left; font-weight: 600; }
+        td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; }
+        tr:hover td { background: #fafafa; }
+        .loading { text-align: center; padding: 60px; color: #888; font-size: 1rem; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+<header>
+    <div>
+        <h1>📊 Dashboard – Kết quả Khảo sát BIM-LCA</h1>
+        <p>NCS Huỳnh Trung Hiếu · HCMUTE · Cập nhật tự động</p>
+    </div>
+</header>
+
+<div class="toolbar">
+    <button class="btn btn-green" onclick="loadData()">🔄 Làm mới</button>
+    <button class="btn btn-outline" onclick="exportCSV()">⬇️ Xuất CSV</button>
+    <button class="btn btn-outline" onclick="exportJSON()">⬇️ Xuất JSON</button>
+    <span id="status">Đang tải...</span>
+</div>
+
+<div class="container">
+    <div id="loading" class="loading">⏳ Đang kết nối database...</div>
+    <div id="content" style="display:none">
+        <div class="stats-row" id="stats-row"></div>
+        <div class="charts-grid" id="charts-grid"></div>
+        <div class="table-card">
+            <h3>📋 Danh sách người trả lời</h3>
+            <table id="responses-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Thời gian</th>
+                        <th>Vai trò (A2)</th>
+                        <th>Kinh nghiệm (A3)</th>
+                        <th>Quy mô đơn vị (A4)</th>
+                        <th>Biết BIM-LCA (B1)</th>
+                        <th>Mức độ quen (B2)</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createClient } = supabase;
+    const sb = createClient(
+        'https://omodmvvgxzrmqgehuamk.supabase.co',
+        'sb_publishable_YP44TXvXtwvdKgtq8o_S8A_3jYvMLAE'
+    );
+
+    let allData = [];
+    const charts = {};
+
+    async function loadData() {
+        document.getElementById('status').textContent = 'Đang tải...';
+        try {
+            const { data, error } = await sb
+                .from('survey_responses')
+                .select('*')
+                .order('submitted_at', { ascending: false });
+
+            if (error) throw error;
+            allData = data || [];
+            renderDashboard(allData);
+            document.getElementById('status').textContent = `✅ ${allData.length} phản hồi · Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}`;
+        } catch (err) {
+            document.getElementById('status').textContent = '❌ Lỗi kết nối: ' + err.message;
+            console.error(err);
+        }
+    }
+
+    function renderDashboard(data) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        renderStats(data);
+        renderCharts(data);
+        renderTable(data);
+    }
+
+    function renderStats(data) {
+        const today = new Date().toDateString();
+        const todayCount = data.filter(r => new Date(r.submitted_at).toDateString() === today).length;
+        const withExp = data.filter(r => r.b2 && (r.b2.includes('thử nghiệm') || r.b2.includes('áp dụng'))).length;
+
+        document.getElementById('stats-row').innerHTML = `
+            <div class="stat-card"><div class="num">${data.length}</div><div class="label">Tổng phản hồi</div></div>
+            <div class="stat-card"><div class="num">${todayCount}</div><div class="label">Hôm nay</div></div>
+            <div class="stat-card"><div class="num">${withExp}</div><div class="label">Có kinh nghiệm BIM-LCA</div></div>
+            <div class="stat-card"><div class="num">${data.length > 0 ? Math.round((withExp/data.length)*100) : 0}%</div><div class="label">Tỷ lệ có kinh nghiệm</div></div>
+        `;
+    }
+
+    function countField(data, field) {
+        const counts = {};
+        data.forEach(r => {
+            const val = r[field] || r.response_data?.[field] || 'Không rõ';
+            counts[val] = (counts[val] || 0) + 1;
+        });
+        return counts;
+    }
+
+    function renderCharts(data) {
+        const grid = document.getElementById('charts-grid');
+        grid.innerHTML = '';
+
+        const chartConfigs = [
+            { id: 'chart-a2', title: 'Vai trò chuyên môn (A2)', field: 'a2' },
+            { id: 'chart-a3', title: 'Số năm kinh nghiệm (A3)', field: 'a3' },
+            { id: 'chart-a4', title: 'Quy mô tổ chức (A4)', field: 'a4' },
+            { id: 'chart-b1', title: 'Đã biết BIM-LCA trước khảo sát (B1)', field: 'b1' },
+            { id: 'chart-b2', title: 'Mức độ quen thuộc với BIM-LCA (B2)', field: 'b2' },
+        ];
+
+        chartConfigs.forEach(cfg => {
+            const counts = countField(data, cfg.field);
+            const labels = Object.keys(counts);
+            const values = Object.values(counts);
+            if (labels.length === 0) return;
+
+            const card = document.createElement('div');
+            card.className = 'chart-card';
+            card.innerHTML = `<h3>${cfg.title}</h3><div class="chart-wrapper"><canvas id="${cfg.id}"></canvas></div>`;
+            grid.appendChild(card);
+
+            if (charts[cfg.id]) charts[cfg.id].destroy();
+            const ctx = document.getElementById(cfg.id).getContext('2d');
+            charts[cfg.id] = new Chart(ctx, {
+                type: labels.length <= 4 ? 'doughnut' : 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#2e7d32','#388e3c','#43a047','#66bb6a','#81c784',
+                            '#a5d6a7','#c8e6c9','#1b5e20','#4caf50','#e8f5e9'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: labels.length <= 4 ? 'right' : 'top', labels: { font: { size: 11 } } } },
+                    scales: labels.length > 4 ? { y: { beginAtZero: true, ticks: { stepSize: 1 } } } : {}
+                }
+            });
+        });
+
+        // Likert average chart for YD (Ý định áp dụng)
+        if (data.length > 0) {
+            const ydKeys = ['yd_1', 'yd_2', 'yd_3'];
+            const ydLabels = ['YD1', 'YD2', 'YD3'];
+            const ydAvgs = ydKeys.map(k => {
+                const vals = data.map(r => parseFloat(r.response_data?.[k])).filter(v => !isNaN(v));
+                return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+            });
+
+            const card = document.createElement('div');
+            card.className = 'chart-card';
+            card.innerHTML = `<h3>Ý định áp dụng BIM-LCA (D6 – Trung bình thang 1-7)</h3><div class="chart-wrapper"><canvas id="chart-yd"></canvas></div>`;
+            grid.appendChild(card);
+
+            if (charts['chart-yd']) charts['chart-yd'].destroy();
+            const ctx = document.getElementById('chart-yd').getContext('2d');
+            charts['chart-yd'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ydLabels,
+                    datasets: [{ label: 'Điểm trung bình', data: ydAvgs, backgroundColor: '#43a047' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 7, beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = data.length === 0
+            ? '<tr><td colspan="7" style="text-align:center;color:#999;padding:30px">Chưa có dữ liệu</td></tr>'
+            : data.map((r, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${new Date(r.submitted_at).toLocaleString('vi-VN')}</td>
+                    <td>${r.a2 || '—'}</td>
+                    <td>${r.a3 || '—'}</td>
+                    <td>${r.a4 || '—'}</td>
+                    <td><span class="badge">${r.b1 || '—'}</span></td>
+                    <td>${r.b2 || '—'}</td>
+                </tr>`).join('');
+    }
+
+    function exportCSV() {
+        if (!allData.length) return alert('Chưa có dữ liệu!');
+        const rows = [['ID','Thời gian','Vai trò','Kinh nghiệm','Quy mô','Biết BIM-LCA','Mức độ quen']];
+        allData.forEach((r, i) => {
+            rows.push([i+1, new Date(r.submitted_at).toLocaleString('vi-VN'), r.a2||'', r.a3||'', r.a4||'', r.b1||'', r.b2||'']);
+        });
+        const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `BIM_LCA_Survey_${Date.now()}.csv`; a.click();
+    }
+
+    function exportJSON() {
+        if (!allData.length) return alert('Chưa có dữ liệu!');
+        const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `BIM_LCA_Survey_${Date.now()}.json`; a.click();
+    }
+
+    // Auto-refresh every 2 minutes
+    loadData();
+    setInterval(loadData, 120000);
+</script>
+</body>
+</html>
