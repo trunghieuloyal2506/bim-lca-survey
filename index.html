@@ -1007,56 +1007,57 @@
     function validateSection(sectionId) {
         let section = document.getElementById(sectionId);
         let valid = true;
-        
+
         // Hide previous errors
         section.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
         section.querySelectorAll('.question-title').forEach(el => el.style.color = '');
+        section.querySelectorAll('tr[data-error]').forEach(el => el.style.background = '');
 
-        // Check native required
-        const requiredInputs = section.querySelectorAll('input[required]');
         let invalidNames = new Set();
-        
-        requiredInputs.forEach(input => {
-            if (input.type === 'radio') {
-                const checked = section.querySelector(`input[name="${input.name}"]:checked`);
-                if (!checked) invalidNames.add(input.name);
-            } else if (input.type === 'checkbox') {
-                 // Checkboxes typically don't have native required in groups, handled manually if needed
-            } else if (!input.value.trim()) {
-                invalidNames.add(input.name);
-            }
+
+        // Check ALL radio groups in section (covers dynamic matrix rows too)
+        const allRadioNames = new Set();
+        section.querySelectorAll('input[type="radio"]').forEach(r => allRadioNames.add(r.name));
+        allRadioNames.forEach(name => {
+            const checked = section.querySelector(`input[name="${name}"]:checked`);
+            if (!checked) invalidNames.add(name);
         });
 
         // Check required checkbox groups explicitly
         const requiredCheckboxGroups = ['c2', 'c3', 'c4', 'c8', 'c9', 'c10', 'c11', 'gp1', 'gp2', 'gp3'];
         requiredCheckboxGroups.forEach(groupName => {
             const groupInputs = section.querySelectorAll(`input[name="${groupName}"]`);
-            if(groupInputs.length > 0) {
+            if (groupInputs.length > 0) {
                 const checked = section.querySelectorAll(`input[name="${groupName}"]:checked`).length;
-                if(checked === 0) {
-                    invalidNames.add(groupName);
-                }
+                if (checked === 0) invalidNames.add(groupName);
             }
         });
 
         if (invalidNames.size > 0) {
             valid = false;
-            // Highlight first error
             const firstErrorName = Array.from(invalidNames)[0];
             const firstErrorEl = section.querySelector(`input[name="${firstErrorName}"]`);
             if (firstErrorEl) {
+                // Highlight the row if inside a table
+                const row = firstErrorEl.closest('tr');
+                if (row) {
+                    row.style.background = '#fff3cd';
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                // Show error on the wrapping .question div
                 const qDiv = firstErrorEl.closest('.question');
-                if(qDiv) {
-                    qDiv.querySelector('.question-title').style.color = 'var(--error-color)';
+                if (qDiv) {
+                    const titleEl = qDiv.querySelector('.question-title');
+                    if (titleEl) titleEl.style.color = 'var(--error-color, #d32f2f)';
                     let err = qDiv.querySelector('.error-message');
-                    if(!err) {
+                    if (!err) {
                         err = document.createElement('div');
                         err.className = 'error-message';
-                        err.innerText = 'Vui lòng hoàn thành phần này.';
                         qDiv.appendChild(err);
                     }
+                    err.innerText = 'Vui lòng chọn đáp án cho tất cả các mục.';
                     err.style.display = 'block';
-                    qDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (!row) qDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
         }
