@@ -611,7 +611,22 @@ function drawChart(id, type, labels, data, options = {}) {
             scales: type === 'bar' ? {
                 x: options.horizontal ? { beginAtZero: true, ticks: { precision: 0, stepSize: options.stepSize || 1 } } : { ticks: { autoSkip: false } },
                 y: options.horizontal ? {} : { beginAtZero: true, min: options.min, max: options.max, ticks: { precision: options.precision !== undefined ? options.precision : (options.max ? 1 : 0), stepSize: options.stepSize || 1 } }
-            } : {},
+            } : (type === 'radar' ? {
+                r: {
+                    min: 0,
+                    max: 7,
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        backdropColor: 'transparent',
+                        font: { size: 10, weight: 'bold' }
+                    },
+                    pointLabels: {
+                        font: { size: 11, weight: '600' },
+                        color: '#1b5e20'
+                    }
+                }
+            } : {}),
             indexAxis: options.horizontal ? 'y' : 'x'
         }
     });
@@ -650,16 +665,22 @@ function renderAllCharts() {
         });
         return scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2) : 0;
     });
-    drawChart('ov-radar-d', 'radar', dFactors.map(f => f.label), radarAvgs, {
+
+    // Hiển thị cả tên nhân tố kèm điểm trung bình cụ thể trên nhãn
+    const radarLabelsWithScore = dFactors.map((f, i) => `${f.label}: ${radarAvgs[i]}`);
+
+    drawChart('ov-radar-d', 'radar', radarLabelsWithScore, radarAvgs, {
         datasets: [{
             label: 'Điểm Trung Bình (Thang 1-7)',
             data: radarAvgs,
-            backgroundColor: 'rgba(25, 118, 210, 0.25)',
+            backgroundColor: 'rgba(25, 118, 210, 0.22)',
             borderColor: '#1565c0',
-            borderWidth: 2,
+            borderWidth: 2.5,
             pointBackgroundColor: '#d32f2f',
             pointBorderColor: '#ffffff',
-            pointRadius: 5
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
         }],
         showLegend: true
     });
