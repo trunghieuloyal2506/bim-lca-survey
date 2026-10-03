@@ -3,122 +3,435 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard – Kết quả Khảo sát BIM-LCA</title>
+    <title>Dashboard Nghiên Cứu Khảo Sát BIM-LCA | NCS Huỳnh Trung Hiếu</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Thư viện xuất file Excel .xlsx chuẩn -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f4f6f4; color: #222; }
-        header { background: #2e7d32; color: white; padding: 18px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        header h1 { font-size: 1.25rem; font-weight: 700; }
-        header p { font-size: 0.82rem; opacity: 0.9; margin-top: 4px; }
-        .toolbar { background: white; padding: 12px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f0f4f0; color: #222; }
+        header { background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; padding: 20px 28px; box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+        header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.3px; }
+        header p { font-size: 0.85rem; opacity: 0.9; margin-top: 5px; }
+
+        .toolbar { background: white; padding: 12px 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 99; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
         .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
         .btn-green { background: #2e7d32; color: white; } .btn-green:hover { background: #1b5e20; }
         .btn-excel { background: #107c41; color: white; } .btn-excel:hover { background: #0c5b30; }
         .btn-outline { background: white; color: #2e7d32; border: 1.5px solid #2e7d32; } .btn-outline:hover { background: #e8f5e9; }
-        #status { font-size: 0.82rem; color: #666; margin-left: auto; font-weight: 500; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 24px 20px; }
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px; }
-        .stat-card { background: white; border-radius: 10px; padding: 18px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-top: 4px solid #2e7d32; }
-        .stat-card .num { font-size: 2.2rem; font-weight: 700; color: #2e7d32; line-height: 1.1; }
-        .stat-card .lbl { font-size: 0.78rem; color: #666; margin-top: 6px; font-weight: 500; }
-        .section-title { font-size: 1.05rem; font-weight: 700; color: #1b5e20; margin: 28px 0 14px; padding-bottom: 6px; border-bottom: 2px solid #a5d6a7; display: flex; justify-content: space-between; align-items: center; }
-        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; margin-bottom: 24px; }
-        .chart-card { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-        .chart-card h3 { font-size: 0.88rem; color: #2e7d32; margin-bottom: 12px; font-weight: 600; }
-        .chart-wrap { position: relative; height: 230px; }
+        #status { font-size: 0.84rem; color: #555; margin-left: auto; font-weight: 500; }
 
-        /* Detail Table */
-        .table-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow-x: auto; }
-        .table-card .sub-info { font-size: 0.82rem; color: #666; margin-bottom: 14px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        th { background: #e8f5e9; color: #1b5e20; padding: 10px 8px; text-align: left; font-weight: 600; white-space: nowrap; border-bottom: 2px solid #c8e6c9; }
-        td { padding: 9px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tbody tr { cursor: pointer; transition: background 0.15s; }
-        tbody tr:hover { background: #e8f5e9; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; background: #e8f5e9; color: #2e7d32; white-space: nowrap; }
-        .badge-orange { background: #fff3e0; color: #e65100; }
+        /* Tabs Navigation */
+        .tab-bar { background: #e8f5e9; border-bottom: 2px solid #a5d6a7; display: flex; gap: 4px; padding: 8px 28px 0; overflow-x: auto; white-space: nowrap; }
+        .tab-btn { background: transparent; border: none; padding: 10px 18px; font-size: 0.88rem; font-weight: 600; color: #2e7d32; cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .tab-btn:hover { background: rgba(46, 125, 50, 0.08); }
+        .tab-btn.active { background: white; color: #1b5e20; border-bottom: 3px solid #1b5e20; box-shadow: 0 -2px 6px rgba(0,0,0,0.03); }
+
+        .container { max-width: 1440px; margin: 0 auto; padding: 24px 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 10px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid #2e7d32; }
+        .stat-card .num { font-size: 2.3rem; font-weight: 700; color: #1b5e20; line-height: 1.1; }
+        .stat-card .lbl { font-size: 0.8rem; color: #666; margin-top: 6px; font-weight: 500; }
+
+        .section-header { margin: 24px 0 14px; padding-bottom: 8px; border-bottom: 2px solid #c8e6c9; display: flex; justify-content: space-between; align-items: flex-end; }
+        .section-header h2 { font-size: 1.15rem; color: #1b5e20; font-weight: 700; }
+        .section-header span { font-size: 0.82rem; color: #666; }
+
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .chart-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+        .chart-card.full-width { grid-column: 1 / -1; }
+        .chart-card h3 { font-size: 0.92rem; color: #1b5e20; margin-bottom: 12px; font-weight: 600; line-height: 1.3; }
+        .chart-card p.desc { font-size: 0.78rem; color: #777; margin-bottom: 14px; margin-top: -6px; }
+        .chart-wrap { position: relative; height: 260px; width: 100%; flex: 1; }
+        .chart-wrap.tall { height: 380px; }
+
+        /* Tables & Lists */
+        .table-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th { background: #e8f5e9; color: #1b5e20; padding: 11px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #a5d6a7; white-space: nowrap; }
+        td { padding: 9px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tbody tr:hover { background: #f9fbe7; cursor: pointer; }
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.74rem; font-weight: 600; background: #e8f5e9; color: #2e7d32; }
         .badge-blue { background: #e3f2fd; color: #1565c0; }
-        .truncate { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .badge-orange { background: #fff3e0; color: #e65100; }
+        .truncate { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* Modal */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; overflow-y: auto; padding: 30px 16px; backdrop-filter: blur(2px); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; overflow-y: auto; padding: 30px 16px; backdrop-filter: blur(3px); }
         .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
-        .modal { background: white; border-radius: 12px; width: 100%; max-width: 950px; padding: 28px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25); margin-bottom: 40px; }
-        .modal h2 { color: #1b5e20; font-size: 1.15rem; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #a5d6a7; }
-        .modal-close { position: absolute; top: 18px; right: 20px; font-size: 1.4rem; cursor: pointer; color: #888; background: none; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-        .modal-close:hover { background: #eee; color: #000; }
-        .field-group { margin-bottom: 22px; background: #fafafa; padding: 14px 16px; border-radius: 8px; border: 1px solid #eee; }
-        .field-group h4 { font-size: 0.85rem; font-weight: 700; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9; }
-        .field-row { display: grid; grid-template-columns: 220px 1fr; gap: 8px; margin-bottom: 7px; font-size: 0.82rem; }
+        .modal { background: white; border-radius: 12px; width: 100%; max-width: 980px; padding: 32px; position: relative; box-shadow: 0 12px 36px rgba(0,0,0,0.3); margin-bottom: 50px; }
+        .modal h2 { color: #1b5e20; font-size: 1.25rem; margin-bottom: 22px; padding-bottom: 10px; border-bottom: 2px solid #a5d6a7; }
+        .modal-close { position: absolute; top: 20px; right: 22px; font-size: 1.5rem; cursor: pointer; color: #777; background: none; border: none; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { background: #f0f0f0; color: #000; }
+        .field-group { margin-bottom: 22px; background: #fafafa; padding: 16px 18px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .field-group h4 { font-size: 0.88rem; font-weight: 700; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #c8e6c9; }
+        .field-row { display: grid; grid-template-columns: 240px 1fr; gap: 10px; margin-bottom: 8px; font-size: 0.83rem; line-height: 1.4; }
         .field-row .key { color: #666; font-weight: 600; }
         .field-row .val { color: #222; }
         .field-row .val.empty { color: #bbb; font-style: italic; }
-        .tag { display: inline-block; background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 7px; margin: 2px 3px 2px 0; font-size: 0.74rem; font-weight: 500; }
-        .likert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 6px; }
-        .likert-pill { background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; }
+        .tag { display: inline-block; background: #e8f5e9; color: #1b5e20; border-radius: 4px; padding: 2px 7px; margin: 2px 3px 2px 0; font-size: 0.75rem; font-weight: 500; }
+        .likert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 6px; }
+        .likert-pill { background: white; padding: 7px 11px; border-radius: 6px; border: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
         .likert-pill .k { color: #555; }
-        .likert-pill .v { font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 2px 8px; border-radius: 10px; }
+        .likert-pill .v { font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 2px 9px; border-radius: 10px; font-size: 0.85rem; }
+
+        .qualitative-box { background: #fff; border-left: 4px solid #2e7d32; padding: 14px 18px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 14px; }
+        .qualitative-box .author { font-size: 0.78rem; font-weight: 700; color: #2e7d32; margin-bottom: 6px; }
+        .qualitative-box .text { font-size: 0.85rem; color: #333; line-height: 1.5; font-style: italic; }
     </style>
 </head>
 <body>
 <header>
-    <h1>📊 Dashboard Quản Lý & Xuất Dữ Liệu Khảo Sát BIM-LCA</h1>
-    <p>Đề tài NCS: Thực trạng và các yếu tố ảnh hưởng đến ý định áp dụng BIM-LCA trong đánh giá phát thải carbon công trình xây dựng tại Việt Nam · NCS Huỳnh Trung Hiếu</p>
+    <h1>📊 Dashboard Phân Tích Khảo Sát BIM-LCA Tại Việt Nam</h1>
+    <p>Đề tài NCS: Thực trạng và các yếu tố ảnh hưởng đến ý định áp dụng BIM-LCA trong đánh giá phát thải carbon công trình xây dựng tại Việt Nam · NCS Huỳnh Trung Hiếu (HCMUTE)</p>
 </header>
 
 <div class="toolbar">
     <button class="btn btn-green" onclick="loadData()">🔄 Làm mới</button>
-    <button class="btn btn-excel" onclick="exportFullExcel()">📊 Xuất File Excel (.xlsx) Đầy Đủ 100%</button>
+    <button class="btn btn-excel" onclick="exportFullExcel()">📊 Xuất File Excel (.xlsx) Đầy Đủ 100% Biến</button>
     <button class="btn btn-outline" onclick="exportFullCSV()">⬇️ Xuất File CSV</button>
     <button class="btn btn-outline" onclick="exportJSON()">⬇️ Xuất JSON</button>
     <span id="status">Đang tải...</span>
 </div>
 
+<!-- Navigation Tabs -->
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📌 Tổng Quan</button>
+    <button class="tab-btn" onclick="switchTab('tab-ab', this)">👥 Khối A & B (Mẫu & Nhận Thức)</button>
+    <button class="tab-btn" onclick="switchTab('tab-c-status', this)">🛠️ Khối C1–C11 (Hiện Trạng BIM & LCA)</button>
+    <button class="tab-btn" onclick="switchTab('tab-c-matrix', this)">⚖️ Khối C12 (Khoảng Trống Điều Kiện)</button>
+    <button class="tab-btn" onclick="switchTab('tab-c-barriers', this)">🚧 Khối C13 & C14 (Rào Cản & Giải Pháp)</button>
+    <button class="tab-btn" onclick="switchTab('tab-d', this)">🎯 Khối D (Mô Hình SEM - 7 Điểm)</button>
+    <button class="tab-btn" onclick="switchTab('tab-ef', this)">💡 Khối E & F (Kỳ Vọng vs Thực Tế)</button>
+    <button class="tab-btn" onclick="switchTab('tab-g', this)">💬 Khối G & Dữ Liệu Chi Tiết</button>
+</div>
+
 <div class="container">
-    <div id="loading" style="text-align:center;padding:60px;color:#888;font-size:1rem;">⏳ Đang kết nối cơ sở dữ liệu Supabase...</div>
+    <div id="loading" style="text-align:center;padding:60px;color:#888;font-size:1.05rem;">⏳ Đang kết nối và đồng bộ cơ sở dữ liệu Supabase...</div>
+
     <div id="content" style="display:none">
-        <div class="stats-row" id="stats-row"></div>
 
-        <div class="section-title">
-            <span>📈 Biểu đồ phân tích tổng hợp</span>
-            <span style="font-size:0.8rem;font-weight:normal;color:#666">Cập nhật theo dữ liệu thực tế</span>
-        </div>
-        <div class="charts-grid" id="charts-grid"></div>
+        <!-- ================= TAB 1: TỔNG QUAN ================= -->
+        <div id="tab-overview" class="tab-content active">
+            <div class="stats-row" id="stats-row"></div>
 
-        <div class="section-title">
-            <span>📋 Bảng dữ liệu tất cả phản hồi</span>
-            <span style="font-size:0.8rem;font-weight:normal;color:#666">Bấm vào bất kỳ dòng nào để xem chi tiết toàn bộ câu trả lời</span>
+            <div class="section-header">
+                <h2>Tổng Hợp Chỉ Số Cốt Lõi</h2>
+                <span>Mẫu nghiên cứu & kết quả chính</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Vai Trò Chuyên Môn Chính (A2)</h3>
+                    <div class="chart-wrap"><canvas id="ov-a2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Mức Độ Quen Thuộc & Kinh Nghiệm BIM-LCA (B2)</h3>
+                    <div class="chart-wrap"><canvas id="ov-b2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Tổng Hợp 6 Nhân Tố Mô Hình Ý Định Áp Dụng (Khối D - Thang 1-7)</h3>
+                    <p class="desc">Điểm trung bình các biến tiềm ẩn trong mô hình nghiên cứu</p>
+                    <div class="chart-wrap"><canvas id="ov-radar-d"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Ý Định Áp Dụng Trong 12 Tháng Tới (D6 - YD1, YD2, YD3)</h3>
+                    <p class="desc">Biến phụ thuộc cốt lõi của nghiên cứu</p>
+                    <div class="chart-wrap"><canvas id="ov-yd"></canvas></div>
+                </div>
+            </div>
         </div>
-        <div class="table-card">
-            <div class="sub-info">💡 Nhấn vào một hàng để mở hộp thoại hiển thị đầy đủ tất cả các biến khảo sát từ Khối A đến Khối G.</div>
-            <table id="main-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Thời gian</th>
-                        <th>Vai trò (A2)</th>
-                        <th>Kinh nghiệm (A3)</th>
-                        <th>Quy mô (A4)</th>
-                        <th>BIM (A5)</th>
-                        <th>Biết BIM-LCA (B1)</th>
-                        <th>Mức độ quen (B2)</th>
-                        <th>Tình trạng (B3)</th>
-                        <th>Mức độ đơn vị (C7)</th>
-                        <th>YD1</th><th>YD2</th><th>YD3</th>
-                        <th>Phỏng vấn (I4)</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
+
+        <!-- ================= TAB 2: KHỐI A & B ================= -->
+        <div id="tab-ab" class="tab-content">
+            <div class="section-header">
+                <h2>Khối A: Sàng Lọc & Đặc Điểm Mẫu Khảo Sát</h2>
+                <span>A1 đến A6</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>A1: Kinh Nghiệm Dự Án Xây Dựng Tại VN (5 Năm)</h3>
+                    <div class="chart-wrap"><canvas id="ch-a1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>A2: Vai Trò Chuyên Môn Chính</h3>
+                    <div class="chart-wrap"><canvas id="ch-a2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>A3: Số Năm Kinh Nghiệm Trong Ngành Xây Dựng</h3>
+                    <div class="chart-wrap"><canvas id="ch-a3"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>A4: Quy Mô Tổ Chức / Doanh Nghiệp</h3>
+                    <div class="chart-wrap"><canvas id="ch-a4"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>A5: Số Năm Kinh Nghiệm Sử Dụng / Quản Lý BIM</h3>
+                    <div class="chart-wrap"><canvas id="ch-a5"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>A6: Số Dự Án Tham Gia Có Đánh Giá Carbon / CT Xanh</h3>
+                    <div class="chart-wrap"><canvas id="ch-a6"></canvas></div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Khối B: Mức Độ Nhận Biết & Tình Trạng BIM-LCA</h2>
+                <span>B1 đến B3</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>B1: Đã Từng Nghe / Biết Đến BIM-LCA</h3>
+                    <div class="chart-wrap"><canvas id="ch-b1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>B2: Mức Độ Quen Thuộc / Kinh Nghiệm BIM-LCA</h3>
+                    <div class="chart-wrap"><canvas id="ch-b2"></canvas></div>
+                </div>
+                <div class="chart-card full-width">
+                    <h3>B3: Tình Trạng & Kế Hoạch Áp Dụng Tại Đơn Vị Trong 12 Tháng Tới</h3>
+                    <div class="chart-wrap"><canvas id="ch-b3"></canvas></div>
+                </div>
+            </div>
         </div>
+
+        <!-- ================= TAB 3: KHỐI C1-C11 ================= -->
+        <div id="tab-c-status" class="tab-content">
+            <div class="section-header">
+                <h2>Khối C1–C7: Mức Độ & Phạm Vi Triển Khai</h2>
+                <span>Thực tế áp dụng tại doanh nghiệp</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>C1: Mức Độ Sử Dụng BIM Trong Công Việc</h3>
+                    <div class="chart-wrap"><canvas id="ch-c1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C2: Phạm Vi Mô-đun Vòng Đời Quan Tâm / Đánh Giá (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C3: Nhóm Vật Liệu Đánh Giá Carbon (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c3"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C4: Mục Đích Chính Đánh Giá Carbon (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c4"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C5: Số Dự Án Đã Tích Hợp BIM Với LCA/Carbon</h3>
+                    <div class="chart-wrap"><canvas id="ch-c5"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C6: Tỷ Lệ Dự Án Áp Dụng BIM-LCA Tích Hợp (3 Năm Gần Đây)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c6"></canvas></div>
+                </div>
+                <div class="chart-card full-width">
+                    <h3>C7: Mức Độ Trưởng Thành Áp Dụng BIM-LCA Tại Đơn Vị (Mức 0 – 6)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c7"></canvas></div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Khối C8–C11: Hệ Sinh Thái Công Cụ & Dữ Liệu</h2>
+                <span>Software, Data & Standards</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>C8: Công Cụ BIM Đã / Đang Sử Dụng (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c8"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C9: Công Cụ LCA / Đánh Giá Carbon (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c9"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C10: Nguồn Dữ Liệu Phát Thải / LCI (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c10"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>C11: Tiêu Chuẩn / Hướng Dẫn Sử Dụng (Chọn Nhiều)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c11"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: KHỐI C12 ================= -->
+        <div id="tab-c-matrix" class="tab-content">
+            <div class="section-header">
+                <h2>C12: Đối Chiếu Mức Độ Quan Trọng vs Hiện Trạng Sẵn Có Tại Việt Nam</h2>
+                <span>Phân tích khoảng trống điều kiện thuận lợi (Gap Analysis - Thang 1 đến 5)</span>
+            </div>
+            <div class="chart-card full-width" style="margin-bottom: 24px;">
+                <h3>Biểu Đồ Đối Chiếu Khoảng Trống (Quan Trọng [QT] vs Sẵn Có [SC] - TL1 đến TL10)</h3>
+                <p class="desc">Khoảng cách giữa thanh màu xanh lá (Quan trọng) và thanh màu cam (Sẵn có) thể hiện rào cản thiếu hụt điều kiện hạ tầng tại Việt Nam</p>
+                <div class="chart-wrap tall"><canvas id="ch-c12-gap"></canvas></div>
+            </div>
+
+            <div class="table-card">
+                <h3 style="color:#1b5e20;margin-bottom:12px">Bảng Chi Tiết Điểm Trung Bình & Độ Chênh Lệch (Gap = QT - SC)</h3>
+                <table id="tbl-c12">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th style="width:50%">Nội dung điều kiện</th>
+                            <th style="text-align:center">Điểm Quan Trọng (QT)</th>
+                            <th style="text-align:center">Điểm Sẵn Có (SC)</th>
+                            <th style="text-align:center">Khoảng Trống (Gap)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-c12-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: KHỐI C13 & C14 ================= -->
+        <div id="tab-c-barriers" class="tab-content">
+            <div class="section-header">
+                <h2>C13: Đánh Giá 21 Rào Cản & Thách Thức Khi Áp Dụng BIM-LCA</h2>
+                <span>Thang 1-5 (1: Không phải rào cản -> 5: Rất nghiêm trọng)</span>
+            </div>
+            <div class="chart-card full-width" style="margin-bottom: 24px;">
+                <h3>Bảng Xếp Hạng Mức Độ Nghiêm Trọng Của Các Rào Cản (Điểm TB từ cao xuống thấp)</h3>
+                <div class="chart-wrap tall"><canvas id="ch-c13-ranking"></canvas></div>
+            </div>
+
+            <div class="section-header">
+                <h2>C14: Nhu Cầu & Ưu Tiên Giải Pháp Thúc Đẩy</h2>
+                <span>NCT1-3 & Nhóm giải pháp GP1, GP2, GP3</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Nhu Cầu Công Cụ Tích Hợp (NCT1, NCT2, NCT3 - Thang 1-5)</h3>
+                    <div class="chart-wrap"><canvas id="ch-c14-nct"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>GP1: Dạng Giải Pháp / Công Cụ Được Ưu Tiên</h3>
+                    <div class="chart-wrap"><canvas id="ch-gp1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>GP2: Nhóm Giải Pháp Cần Ưu Tiên Tại Việt Nam</h3>
+                    <div class="chart-wrap"><canvas id="ch-gp2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>GP3: Chức Năng Cần Có Của Công Cụ Tích Hợp</h3>
+                    <div class="chart-wrap"><canvas id="ch-gp3"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 6: KHỐI D ================= -->
+        <div id="tab-d" class="tab-content">
+            <div class="section-header">
+                <h2>Khối D: Các Yếu Tố Ảnh Hưởng Đến Ý Định Áp Dụng (Mô Hình SEM - Thang 7 Điểm)</h2>
+                <span>1: Hoàn toàn không đồng ý ... 7: Hoàn toàn đồng ý</span>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>D1: Tính Khả Thi Kỹ Thuật (KT1 đến KT4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-kt"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>D2: Sự Hỗ Trợ Của Người Quản Lý (QL1 đến QL4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-ql"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>D3: Nhu Cầu Thị Trường (TT1 đến TT4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-tt"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>D4: Lợi Ích Kỳ Vọng (LI1 đến LI4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-li"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>D5: Sự Hỗ Trợ Của Chính Sách (CS1 đến CS4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-cs"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>D6: Ý Định Áp Dụng Trong 12 Tháng Tới (YD1, YD2, YD3)</h3>
+                    <div class="chart-wrap"><canvas id="ch-d-yd"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 7: KHỐI E & F ================= -->
+        <div id="tab-ef" class="tab-content">
+            <div class="section-header">
+                <h2>Khối E & F: Đối Chiếu Lợi Ích Kỳ Vọng vs Kết Quả Thực Tế Đạt Được</h2>
+                <span>Khối E (Toàn bộ mẫu) vs Khối F (Chỉ người có kinh nghiệm) - Thang 1 đến 5</span>
+            </div>
+            <div class="chart-card full-width" style="margin-bottom: 24px;">
+                <h3>So Sánh Điểm Trung Bình: Lợi Ích Kỳ Vọng (LIP) vs Kết Quả Đã Đạt Được (ROP)</h3>
+                <div class="chart-wrap tall"><canvas id="ch-ef-compare"></canvas></div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Khối E: Chi Tiết Hồ Sơ Lợi Ích Kỳ Vọng (LIP1–LIP6)</h3>
+                    <div class="chart-wrap"><canvas id="ch-e-detail"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Khối F: Chi Tiết Kết Quả Đã Ghi Nhận Thực Tế (ROP1–ROP6)</h3>
+                    <p class="desc">Chỉ tính trên đối tượng đã thử nghiệm hoặc áp dụng thực tế</p>
+                    <div class="chart-wrap"><canvas id="ch-f-detail"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 8: KHỐI G & BẢNG DỮ LIỆU ================= -->
+        <div id="tab-g" class="tab-content">
+            <div class="section-header">
+                <h2>Khối G: Ý Kiến Bổ Sung & Đăng Ký Phỏng Vấn</h2>
+                <span>Dữ liệu định tính & danh sách liên hệ</span>
+            </div>
+            <div class="charts-grid" style="grid-template-columns: 350px 1fr;">
+                <div class="chart-card">
+                    <h3>Sẵn Sàng Tham Gia Phỏng Vấn (I4)</h3>
+                    <div class="chart-wrap"><canvas id="ch-g-i4"></canvas></div>
+                </div>
+                <div class="table-card" style="margin-bottom:0">
+                    <h3 style="color:#1b5e20;margin-bottom:12px">Danh Sách Người Sẵn Sàng Phỏng Vấn Bán Cấu Trúc</h3>
+                    <table id="tbl-interview">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>Thời gian</th><th>Vai trò</th><th>Kinh nghiệm</th><th>Sẵn sàng</th><th>Thông tin liên hệ (I5)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-interview-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-top:30px">
+                <h2>Ý Kiến Đóng Góp Định Tính (I1, I2, I3)</h2>
+                <span>Ghi nhận từ các chuyên gia</span>
+            </div>
+            <div id="qualitative-container"></div>
+
+            <div class="section-header" style="margin-top:35px">
+                <h2>Bảng Dữ Liệu Tổng Hợp Toàn Bộ Phản Hồi</h2>
+                <span>Nhấn vào bất kỳ hàng nào để xem chi tiết 100% câu trả lời</span>
+            </div>
+            <div class="table-card">
+                <table id="main-table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Thời gian</th><th>Vai trò (A2)</th><th>Kinh nghiệm (A3)</th><th>Quy mô (A4)</th>
+                            <th>BIM (A5)</th><th>Biết BIM-LCA (B1)</th><th>Quen thuộc (B2)</th><th>Kế hoạch (B3)</th>
+                            <th>Mức độ (C7)</th><th>YD1</th><th>YD2</th><th>YD3</th><th>Phỏng vấn</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<!-- Modal xem chi tiết phản hồi -->
+<!-- Modal Chi Tiết Phản Hồi -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
     <div class="modal" id="modal-content">
         <button class="modal-close" onclick="closeModal()">✕</button>
@@ -137,6 +450,51 @@ const sb = createClient(
 let allData = [];
 const charts = {};
 
+const C12_LABELS = [
+    "TL1: EPD/LCI & hệ số phát thải phù hợp vật liệu/năng lượng VN",
+    "TL2: Yêu cầu thông tin BIM tối thiểu & độ tin cậy theo LOD",
+    "TL3: Từ điển vật liệu, mã phân loại & đơn vị đo thống nhất",
+    "TL4: Hướng dẫn thống nhất mục tiêu, ranh giới, vòng đời",
+    "TL5: Khả năng liên thông qua IFC, API hoặc định dạng mở",
+    "TL6: Nhân sự có kiến thức kết hợp BIM, LCA & chuyên môn XD",
+    "TL7: Cam kết & phối hợp của lãnh đạo, CĐT, thiết kế, QS, BIM",
+    "TL8: Yêu cầu pháp lý, tiêu chuẩn, chỉ tiêu carbon bắt buộc",
+    "TL9: Dự án thí điểm, benchmark & quy trình kiểm chứng tại VN",
+    "TL10: Nguồn lực phù hợp về thời gian, chi phí & phần mềm"
+];
+
+const C13_CODES = [
+    { code: 'DL1', name: 'Thiếu CSDL phát thải EPD/LCI vật liệu trong nước' },
+    { code: 'DL2', name: 'Dùng dữ liệu nước ngoài làm giảm độ tin cậy' },
+    { code: 'KTa1', name: 'Chuyển đổi/trao đổi dữ liệu BIM-LCA khó khăn' },
+    { code: 'KTa2', name: 'Định dạng IFC chưa đủ mô tả thông tin môi trường' },
+    { code: 'PP1', name: 'Thiếu thống nhất phương pháp/ranh giới (LOD, vòng đời)' },
+    { code: 'PP2', name: 'LOD thực hành chưa đủ chi tiết cho LCA tin cậy' },
+    { code: 'TC1', name: 'Đội ngũ kỹ thuật thiếu kiến thức/kỹ năng LCA' },
+    { code: 'TC2', name: 'Chương trình đào tạo BIM-LCA tại VN còn thiếu' },
+    { code: 'NL1', name: 'Chi phí phần mềm BIM/LCA chuyên dụng là rào cản' },
+    { code: 'NL2', name: 'Chi phí đào tạo nhân sự vận hành là rào cản' },
+    { code: 'CSa1', name: 'Thiếu quy định pháp lý/tiêu chuẩn kỹ thuật bắt buộc' },
+    { code: 'CSa2', name: 'Thiếu cơ chế chứng nhận Net Zero chính thức' },
+    { code: 'TT1', name: 'Chủ đầu tư chưa quan tâm/yêu cầu đánh giá carbon' },
+    { code: 'TT2', name: 'Thị trường chưa tạo đủ động lực kinh tế công trình thấp carbon' },
+    { code: 'CC1', name: 'Phần mềm BIM-LCA hiện có chưa phù hợp bối cảnh VN' },
+    { code: 'CC2', name: 'Thiếu tin tưởng vào kết quả khi tự động hóa hoàn toàn' },
+    { code: 'RCT1', name: 'Khó liên kết thông tin vật liệu & khối lượng BIM với carbon' },
+    { code: 'RCT2', name: 'Đòi hỏi chuyển/nhập lại dữ liệu thủ công giữa phần mềm' },
+    { code: 'RCT3', name: 'Mô hình BIM thay đổi, kết quả carbon khó cập nhật đồng bộ' },
+    { code: 'RCT4', name: 'Khó đưa kết quả carbon ngược về BIM để so sánh phương án' },
+    { code: 'RCT5', name: 'Quy trình BIM-LCA bị phân mảnh do thiếu liên thông' }
+];
+
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    window.dispatchEvent(new Event('resize'));
+}
+
 async function loadData() {
     document.getElementById('status').textContent = 'Đang tải...';
     try {
@@ -144,7 +502,7 @@ async function loadData() {
         if (error) throw error;
         allData = data || [];
         renderAll();
-        document.getElementById('status').textContent = `✅ Đã tải ${allData.length} phản hồi · ${new Date().toLocaleTimeString('vi-VN')}`;
+        document.getElementById('status').textContent = `✅ ${allData.length} phản hồi · ${new Date().toLocaleTimeString('vi-VN')}`;
     } catch(e) {
         document.getElementById('status').textContent = '❌ ' + e.message;
     }
@@ -154,8 +512,8 @@ function renderAll() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = 'block';
     renderStats();
-    renderCharts();
-    renderTable();
+    renderAllCharts();
+    renderTables();
 }
 
 function renderStats() {
@@ -168,137 +526,326 @@ function renderStats() {
         <div class="stat-card"><div class="num">${todayN}</div><div class="lbl">Phản hồi hôm nay</div></div>
         <div class="stat-card"><div class="num">${withExp}</div><div class="lbl">Có kinh nghiệm BIM-LCA</div></div>
         <div class="stat-card"><div class="num">${allData.length ? Math.round(withExp/allData.length*100) : 0}%</div><div class="lbl">Tỷ lệ có kinh nghiệm</div></div>
-        <div class="stat-card"><div class="num">${pv}</div><div class="lbl">Đồng ý phỏng vấn</div></div>
+        <div class="stat-card"><div class="num">${pv}</div><div class="lbl">Sẵn sàng phỏng vấn</div></div>
     `;
 }
 
 const GREEN = ['#1b5e20','#2e7d32','#388e3c','#43a047','#4caf50','#66bb6a','#81c784','#a5d6a7','#c8e6c9','#e8f5e9'];
 
-function countField(field) {
+function countSingle(field) {
     const c = {};
     allData.forEach(r => { const v = r[field] || r.response_data?.[field] || '(Không rõ)'; c[v] = (c[v]||0)+1; });
     return c;
 }
 
-function makeChart(id, title, counts, type) {
-    const labels = Object.keys(counts), vals = Object.values(counts);
-    const card = document.createElement('div'); card.className = 'chart-card';
-    card.innerHTML = `<h3>${title}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
-    document.getElementById('charts-grid').appendChild(card);
+function countMulti(field) {
+    const c = {};
+    allData.forEach(r => {
+        const val = r.response_data?.[field];
+        if (Array.isArray(val)) {
+            val.forEach(v => { c[v] = (c[v]||0)+1; });
+        } else if (val) {
+            c[val] = (c[val]||0)+1;
+        }
+    });
+    return c;
+}
+
+function drawChart(id, type, labels, data, options = {}) {
+    if (!document.getElementById(id)) return;
     if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-        type, data: { labels, datasets: [{ data: vals, backgroundColor: GREEN }] },
-        options: { responsive:true, maintainAspectRatio:false,
-            plugins: { legend: { position: type==='doughnut'?'right':'top', labels:{font:{size:10},boxWidth:12} } },
-            scales: type==='bar' ? { y:{beginAtZero:true, ticks:{stepSize:1}} } : {}
+    const ctx = document.getElementById(id).getContext('2d');
+    
+    // Default showLegend: true for multi-datasets or pie/doughnut/radar, false for simple single-dataset bar charts
+    const hasMultipleDatasets = options.datasets && options.datasets.length > 1;
+    const isPieOrRadar = type === 'doughnut' || type === 'pie' || type === 'radar';
+    const showLegend = options.showLegend !== undefined ? options.showLegend : (hasMultipleDatasets || isPieOrRadar);
+
+    charts[id] = new Chart(ctx, {
+        type,
+        data: {
+            labels,
+            datasets: options.datasets ? options.datasets : [{
+                label: options.datasetLabel || 'Số lượng phản hồi',
+                data,
+                backgroundColor: options.colors || GREEN,
+                borderColor: options.borderColor,
+                borderWidth: options.borderWidth || 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: showLegend,
+                    position: type === 'doughnut' || type === 'pie' ? 'right' : 'top',
+                    labels: { font: { size: 11 }, boxWidth: 12 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            return (options.tooltipPrefix || '') + val + (options.tooltipSuffix || '');
+                        }
+                    }
+                }
+            },
+            scales: type === 'bar' ? {
+                x: options.horizontal ? { beginAtZero: true, ticks: { precision: 0, stepSize: options.stepSize || 1 } } : {},
+                y: options.horizontal ? {} : { beginAtZero: true, min: options.min, max: options.max, ticks: { precision: options.precision !== undefined ? options.precision : (options.max ? 1 : 0), stepSize: options.stepSize || 1 } }
+            } : {},
+            indexAxis: options.horizontal ? 'y' : 'x'
         }
     });
 }
 
-function makeLikertChart(id, title, fieldPrefix, scale, labels) {
-    const avgs = labels.map((_, i) => {
-        const key = `${fieldPrefix}_${i+1}`;
-        const vals = allData.map(r => parseFloat(r.response_data?.[key])).filter(v => !isNaN(v));
-        return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
-    });
-    const card = document.createElement('div'); card.className = 'chart-card';
-    card.innerHTML = `<h3>${title}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
-    document.getElementById('charts-grid').appendChild(card);
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Điểm TB', data: avgs, backgroundColor: '#388e3c' }] },
-        options: { responsive:true, maintainAspectRatio:false,
-            scales: { y:{min:0, max:scale, beginAtZero:true} },
-            plugins: { legend:{display:false} }
-        }
-    });
-}
-
-function renderCharts() {
-    document.getElementById('charts-grid').innerHTML = '';
+function renderAllCharts() {
     if (!allData.length) return;
 
-    makeChart('ch-a2','Vai trò chuyên môn (A2)', countField('a2'), 'bar');
-    makeChart('ch-a3','Số năm kinh nghiệm (A3)', countField('a3'), 'doughnut');
-    makeChart('ch-a4','Quy mô tổ chức (A4)', countField('a4'), 'doughnut');
-    makeChart('ch-b1','Đã biết BIM-LCA trước khảo sát (B1)', countField('b1'), 'doughnut');
-    makeChart('ch-b2','Mức độ quen thuộc với BIM-LCA (B2)', countField('b2'), 'bar');
+    // --- TAB 1: OVERVIEW ---
+    const a2C = countSingle('a2');
+    drawChart('ov-a2', 'doughnut', Object.keys(a2C), Object.values(a2C));
+    const b2C = countSingle('b2');
+    drawChart('ov-b2', 'bar', Object.keys(b2C), Object.values(b2C), { showLegend: false });
 
-    // D1 - KT
-    makeLikertChart('ch-kt','Tính khả thi kỹ thuật (D1-KT, thang 1-7)', 'd', 7, ['KT1','KT2','KT3','KT4']);
-    // D2 - QL
-    const qlLabels = ['QL1','QL2','QL3','QL4'];
-    const qlAvgs = [5,6,7,8].map(idx => {
+    // Radar Khối D
+    const dFactors = [
+        { label: 'KT (Kỹ thuật)', indices: [1,2,3,4] },
+        { label: 'QL (Quản lý)', indices: [5,6,7,8] },
+        { label: 'TT (Thị trường)', indices: [9,10,11,12] },
+        { label: 'LI (Lợi ích)', indices: [13,14,15,16] },
+        { label: 'CS (Chính sách)', indices: [17,18,19,20] },
+        { label: 'YD (Ý định)', indices: [21,22,23] }
+    ];
+    const radarAvgs = dFactors.map(f => {
+        const scores = [];
+        allData.forEach(r => {
+            f.indices.forEach(idx => {
+                const val = parseFloat(r.response_data?.[`d_${idx}`]);
+                if (!isNaN(val)) scores.push(val);
+            });
+        });
+        return scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2) : 0;
+    });
+    drawChart('ov-radar-d', 'radar', dFactors.map(f => f.label), radarAvgs, {
+        datasets: [{
+            label: 'Điểm Trung Bình (Thang 1-7)',
+            data: radarAvgs,
+            backgroundColor: 'rgba(46, 125, 50, 0.25)',
+            borderColor: '#2e7d32',
+            pointBackgroundColor: '#1b5e20',
+            pointBorderColor: '#fff'
+        }],
+        showLegend: true
+    });
+
+    // YD bar
+    const ydAvgs = [21, 22, 23].map(idx => {
         const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
-    addCustomBarChart('ch-ql', 'Sự hỗ trợ của người quản lý (D2-QL, thang 1-7)', qlLabels, qlAvgs, 7);
+    drawChart('ov-yd', 'bar', ['YD1: Ý định', 'YD2: Dự kiến', 'YD3: Kế hoạch'], ydAvgs, {
+        max: 7, showLegend: false, colors: ['#2e7d32', '#388e3c', '#43a047']
+    });
 
-    // D4 - LI
-    const liLabels = ['LI1','LI2','LI3','LI4'];
-    const liAvgs = [13,14,15,16].map(idx => {
-        const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
+    // --- TAB 2: KHỐI A & B ---
+    const a1C = countSingle('a1'); drawChart('ch-a1', 'doughnut', Object.keys(a1C), Object.values(a1C));
+    drawChart('ch-a2', 'bar', Object.keys(a2C), Object.values(a2C), { showLegend: false });
+    const a3C = countSingle('a3'); drawChart('ch-a3', 'pie', Object.keys(a3C), Object.values(a3C));
+    const a4C = countSingle('a4'); drawChart('ch-a4', 'doughnut', Object.keys(a4C), Object.values(a4C));
+    const a5C = countSingle('a5'); drawChart('ch-a5', 'bar', Object.keys(a5C), Object.values(a5C), { showLegend: false });
+    const a6C = countSingle('a6'); drawChart('ch-a6', 'bar', Object.keys(a6C), Object.values(a6C), { showLegend: false });
+
+    const b1C = countSingle('b1'); drawChart('ch-b1', 'doughnut', Object.keys(b1C), Object.values(b1C));
+    drawChart('ch-b2', 'bar', Object.keys(b2C), Object.values(b2C), { showLegend: false });
+    const b3C = countSingle('b3'); drawChart('ch-b3', 'bar', Object.keys(b3C), Object.values(b3C), { showLegend: false });
+
+    // --- TAB 3: KHỐI C1-C11 ---
+    const c1C = countSingle('c1'); drawChart('ch-c1', 'bar', Object.keys(c1C), Object.values(c1C), { showLegend: false });
+    const c2C = countMulti('c2'); drawChart('ch-c2', 'bar', Object.keys(c2C), Object.values(c2C), { showLegend: false, horizontal: true });
+    const c3C = countMulti('c3'); drawChart('ch-c3', 'bar', Object.keys(c3C), Object.values(c3C), { showLegend: false, horizontal: true });
+    const c4C = countMulti('c4'); drawChart('ch-c4', 'bar', Object.keys(c4C), Object.values(c4C), { showLegend: false, horizontal: true });
+    const c5C = countSingle('c5'); drawChart('ch-c5', 'doughnut', Object.keys(c5C), Object.values(c5C));
+    const c6C = countSingle('c6'); drawChart('ch-c6', 'bar', Object.keys(c6C), Object.values(c6C), { showLegend: false });
+    const c7C = countSingle('c7'); drawChart('ch-c7', 'bar', Object.keys(c7C), Object.values(c7C), { showLegend: false, horizontal: true });
+    const c8C = countMulti('c8'); drawChart('ch-c8', 'bar', Object.keys(c8C), Object.values(c8C), { showLegend: false, horizontal: true });
+    const c9C = countMulti('c9'); drawChart('ch-c9', 'bar', Object.keys(c9C), Object.values(c9C), { showLegend: false, horizontal: true });
+    const c10C = countMulti('c10'); drawChart('ch-c10', 'bar', Object.keys(c10C), Object.values(c10C), { showLegend: false, horizontal: true });
+    const c11C = countMulti('c11'); drawChart('ch-c11', 'bar', Object.keys(c11C), Object.values(c11C), { showLegend: false, horizontal: true });
+
+    // --- TAB 4: KHỐI C12 GAP ANALYSIS ---
+    const qtAvgs = [], scAvgs = [];
+    for (let i = 1; i <= 10; i++) {
+        const qts = allData.map(r => parseFloat(r.response_data?.[`c12_qt_${i}`])).filter(v => !isNaN(v));
+        const scs = allData.map(r => parseFloat(r.response_data?.[`c12_sc_${i}`])).filter(v => !isNaN(v));
+        qtAvgs.push(qts.length ? +(qts.reduce((a,b)=>a+b,0)/qts.length).toFixed(2) : 0);
+        scAvgs.push(scs.length ? +(scs.reduce((a,b)=>a+b,0)/scs.length).toFixed(2) : 0);
+    }
+    drawChart('ch-c12-gap', 'bar', C12_LABELS.map((_, i) => `TL${i+1}`), [], {
+        datasets: [
+            { label: 'Mức Độ Quan Trọng (QT)', data: qtAvgs, backgroundColor: '#2e7d32' },
+            { label: 'Hiện Trạng Sẵn Có (SC)', data: scAvgs, backgroundColor: '#f57c00' }
+        ],
+        max: 5,
+        stepSize: 1
+    });
+
+    // Populate C12 Table
+    const c12Tbody = document.getElementById('tbl-c12-body');
+    if (c12Tbody) {
+        c12Tbody.innerHTML = C12_LABELS.map((label, i) => {
+            const qt = qtAvgs[i];
+            const sc = scAvgs[i];
+            const gap = (qt - sc).toFixed(2);
+            return `<tr>
+                <td><b>TL${i+1}</b></td>
+                <td>${label}</td>
+                <td style="text-align:center;font-weight:700;color:#2e7d32">${qt}</td>
+                <td style="text-align:center;font-weight:700;color:#f57c00">${sc}</td>
+                <td style="text-align:center;font-weight:700;color:${gap > 0 ? '#d32f2f' : '#388e3c'}">${gap > 0 ? '+'+gap : gap}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // --- TAB 5: KHỐI C13 & C14 ---
+    // C13 Ranking
+    const c13Stats = C13_CODES.map((item, idx) => {
+        const vals = allData.map(r => parseFloat(r.response_data?.[`c13_${idx+1}`])).filter(v => !isNaN(v));
+        const avg = vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+        return { code: item.code, name: item.name, avg };
+    }).sort((a,b) => b.avg - a.avg);
+
+    drawChart('ch-c13-ranking', 'bar', c13Stats.map(s => `${s.code}: ${s.name}`), c13Stats.map(s => s.avg), {
+        horizontal: true, max: 5, showLegend: false,
+        colors: c13Stats.map(s => s.avg >= 4 ? '#d32f2f' : (s.avg >= 3 ? '#f57c00' : '#388e3c'))
+    });
+
+    // C14 NCT
+    const nctAvgs = [1, 2, 3].map(i => {
+        const vals = allData.map(r => parseFloat(r.response_data?.[`c14_${i}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
-    addCustomBarChart('ch-li', 'Lợi ích kỳ vọng (D4-LI, thang 1-7)', liLabels, liAvgs, 7);
+    drawChart('ch-c14-nct', 'bar', ['NCT1: Cần công cụ liên kết', 'NCT2: Công cụ là điều kiện', 'NCT3: Tăng khả năng tham gia'], nctAvgs, { max: 5, showLegend: false });
 
-    // D6 - YD
-    const ydLabels = ['YD1','YD2','YD3'];
-    const ydAvgs = [21,22,23].map(idx => {
-        const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
+    const gp1C = countMulti('gp1'); drawChart('ch-gp1', 'bar', Object.keys(gp1C), Object.values(gp1C), { showLegend: false, horizontal: true });
+    const gp2C = countMulti('gp2'); drawChart('ch-gp2', 'bar', Object.keys(gp2C), Object.values(gp2C), { showLegend: false, horizontal: true });
+    const gp3C = countMulti('gp3'); drawChart('ch-gp3', 'bar', Object.keys(gp3C), Object.values(gp3C), { showLegend: false, horizontal: true });
+
+    // --- TAB 6: KHỐI D SEM (1-7) ---
+    const drawLikertGroup = (id, indices, labels) => {
+        const avgs = indices.map(idx => {
+            const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
+            return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+        });
+        drawChart(id, 'bar', labels, avgs, { max: 7, showLegend: false, colors: ['#2e7d32','#388e3c','#43a047','#66bb6a'] });
+    };
+
+    drawLikertGroup('ch-d-kt', [1,2,3,4], ['KT1', 'KT2', 'KT3', 'KT4']);
+    drawLikertGroup('ch-d-ql', [5,6,7,8], ['QL1', 'QL2', 'QL3', 'QL4']);
+    drawLikertGroup('ch-d-tt', [9,10,11,12], ['TT1', 'TT2', 'TT3', 'TT4']);
+    drawLikertGroup('ch-d-li', [13,14,15,16], ['LI1', 'LI2', 'LI3', 'LI4']);
+    drawLikertGroup('ch-d-cs', [17,18,19,20], ['CS1', 'CS2', 'CS3', 'CS4']);
+    drawLikertGroup('ch-d-yd', [21,22,23], ['YD1', 'YD2', 'YD3']);
+
+    // --- TAB 7: KHỐI E & F ---
+    const lipAvgs = [1,2,3,4,5,6].map(i => {
+        const vals = allData.map(r => parseFloat(r.response_data?.[`e_${i}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
-    addCustomBarChart('ch-yd', 'Ý định áp dụng BIM-LCA trong 12 tháng (D6-YD, thang 1-7)', ydLabels, ydAvgs, 7);
+    const ropAvgs = [1,2,3,4,5,6].map(i => {
+        const vals = allData.map(r => parseFloat(r.response_data?.[`f_${i}`])).filter(v => !isNaN(v));
+        return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+    });
 
-    // Khối E
-    makeLikertChart('ch-e','Hồ sơ lợi ích kỳ vọng cụ thể (Khối E, thang 1-5)', 'e', 5, ['LIP1','LIP2','LIP3','LIP4','LIP5','LIP6']);
+    drawChart('ch-ef-compare', 'bar', ['Mục 1: Nhận diện nguồn carbon', 'Mục 2: Lựa chọn vật liệu thấp', 'Mục 3: Rút ngắn thời gian', 'Mục 4: Cân bằng chi phí/carbon', 'Mục 5: Đáp ứng chứng nhận', 'Mục 6: Nâng cao cạnh tranh'], [], {
+        datasets: [
+            { label: 'Kỳ Vọng (LIP - Khối E)', data: lipAvgs, backgroundColor: '#2e7d32' },
+            { label: 'Thực Tế Đạt Được (ROP - Khối F)', data: ropAvgs, backgroundColor: '#1976d2' }
+        ],
+        max: 5
+    });
+
+    drawChart('ch-e-detail', 'bar', ['LIP1','LIP2','LIP3','LIP4','LIP5','LIP6'], lipAvgs, { max: 5, showLegend: false });
+    drawChart('ch-f-detail', 'bar', ['ROP1','ROP2','ROP3','ROP4','ROP5','ROP6'], ropAvgs, { max: 5, showLegend: false, colors: ['#1976d2'] });
+
+    // --- TAB 8: KHỐI G ---
+    const i4C = countSingle('i4');
+    drawChart('ch-g-i4', 'doughnut', Object.keys(i4C), Object.values(i4C));
 }
 
-function addCustomBarChart(id, title, labels, data, max) {
-    const card = document.createElement('div'); card.className = 'chart-card';
-    card.innerHTML = `<h3>${title}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
-    document.getElementById('charts-grid').appendChild(card);
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Điểm TB', data, backgroundColor: '#2e7d32' }] },
-        options: { responsive:true, maintainAspectRatio:false,
-            scales: { y:{min:0, max, beginAtZero:true} },
-            plugins: { legend:{display:false} }
-        }
-    });
-}
-
-function renderTable() {
+function renderTables() {
+    // Main Table
     const tbody = document.getElementById('table-body');
-    if (!allData.length) { tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#999;padding:30px">Chưa có dữ liệu</td></tr>'; return; }
-    tbody.innerHTML = allData.map((r, i) => {
-        const rd = r.response_data || {};
-        const yd1 = rd.d_21 || '—', yd2 = rd.d_22 || '—', yd3 = rd.d_23 || '—';
-        return `<tr onclick="showDetail(${i})">
-            <td><b>${i+1}</b></td>
-            <td style="white-space:nowrap">${new Date(r.submitted_at).toLocaleString('vi-VN')}</td>
-            <td class="truncate" title="${r.a2||''}">${r.a2||'—'}</td>
-            <td>${r.a3||'—'}</td>
-            <td class="truncate" title="${r.a4||''}">${r.a4||'—'}</td>
-            <td>${rd.a5||'—'}</td>
-            <td><span class="badge ${r.b1==='Đã từng nghe/biết đến BIM-LCA'?'badge-blue':'badge-orange'}">${r.b1||'—'}</span></td>
-            <td class="truncate" title="${r.b2||''}">${r.b2||'—'}</td>
-            <td class="truncate" title="${rd.b3||''}">${rd.b3||'—'}</td>
-            <td class="truncate" title="${rd.c7||''}">${rd.c7||'—'}</td>
-            <td style="text-align:center;font-weight:700;color:#2e7d32">${yd1}</td>
-            <td style="text-align:center;font-weight:700;color:#2e7d32">${yd2}</td>
-            <td style="text-align:center;font-weight:700;color:#2e7d32">${yd3}</td>
-            <td><span class="badge">${rd.i4||'—'}</span></td>
-        </tr>`;
-    }).join('');
+    if (tbody) {
+        tbody.innerHTML = allData.length === 0
+            ? '<tr><td colspan="14" style="text-align:center;color:#999;padding:30px">Chưa có dữ liệu khảo sát</td></tr>'
+            : allData.map((r, i) => {
+                const rd = r.response_data || {};
+                return `<tr onclick="showDetail(${i})">
+                    <td><b>${i+1}</b></td>
+                    <td style="white-space:nowrap">${new Date(r.submitted_at).toLocaleString('vi-VN')}</td>
+                    <td class="truncate" title="${r.a2||''}">${r.a2||'—'}</td>
+                    <td>${r.a3||'—'}</td>
+                    <td class="truncate" title="${r.a4||''}">${r.a4||'—'}</td>
+                    <td>${rd.a5||'—'}</td>
+                    <td><span class="badge ${r.b1==='Đã từng nghe/biết đến BIM-LCA'?'badge-blue':'badge-orange'}">${r.b1||'—'}</span></td>
+                    <td class="truncate" title="${r.b2||''}">${r.b2||'—'}</td>
+                    <td class="truncate" title="${rd.b3||''}">${rd.b3||'—'}</td>
+                    <td class="truncate" title="${rd.c7||''}">${rd.c7||'—'}</td>
+                    <td style="text-align:center;font-weight:700;color:#2e7d32">${rd.d_21||'—'}</td>
+                    <td style="text-align:center;font-weight:700;color:#2e7d32">${rd.d_22||'—'}</td>
+                    <td style="text-align:center;font-weight:700;color:#2e7d32">${rd.d_23||'—'}</td>
+                    <td><span class="badge">${rd.i4||'—'}</span></td>
+                </tr>`;
+            }).join('');
+    }
+
+    // Interview Table
+    const intTbody = document.getElementById('tbl-interview-body');
+    if (intTbody) {
+        const interviewList = allData.filter(r => r.response_data?.i4 && r.response_data.i4 !== 'Không');
+        intTbody.innerHTML = interviewList.length === 0
+            ? '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">Chưa có người đồng ý phỏng vấn</td></tr>'
+            : interviewList.map((r, i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${new Date(r.submitted_at).toLocaleDateString('vi-VN')}</td>
+                    <td>${r.a2||'—'}</td>
+                    <td>${r.a3||'—'}</td>
+                    <td><span class="badge badge-blue">${r.response_data.i4}</span></td>
+                    <td><b>${r.response_data.i5 || '(Chưa để lại liên hệ)'}</b></td>
+                </tr>
+            `).join('');
+    }
+
+    // Qualitative comments
+    const qualContainer = document.getElementById('qualitative-container');
+    if (qualContainer) {
+        const comments = [];
+        allData.forEach((r, i) => {
+            const rd = r.response_data || {};
+            if (rd.i1 || rd.i2 || rd.i3) {
+                comments.push({ id: i+1, a2: r.a2, a3: r.a3, i1: rd.i1, i2: rd.i2, i3: rd.i3 });
+            }
+        });
+        qualContainer.innerHTML = comments.length === 0
+            ? '<p style="color:#888;font-style:italic">Chưa có ý kiến định tính nào được ghi nhận.</p>'
+            : comments.map(c => `
+                <div class="qualitative-box">
+                    <div class="author">Phản hồi #${c.id} · ${c.a2 || 'Chuyên gia'} (${c.a3 || 'N/A'})</div>
+                    ${c.i1 ? `<div class="text"><b>I1 (Nguyên nhân gốc):</b> "${c.i1}"</div>` : ''}
+                    ${c.i2 ? `<div class="text" style="margin-top:4px"><b>I2 (Ví dụ thực tế):</b> "${c.i2}"</div>` : ''}
+                    ${c.i3 ? `<div class="text" style="margin-top:4px"><b>I3 (Đề xuất khác):</b> "${c.i3}"</div>` : ''}
+                </div>
+            `).join('');
+    }
 }
 
 function showDetail(idx) {
     const r = allData[idx];
     const rd = r.response_data || {};
-    document.getElementById('modal-title').textContent = `Phản hồi #${idx+1} · ${new Date(r.submitted_at).toLocaleString('vi-VN')}`;
+    document.getElementById('modal-title').textContent = `Phản Hồi #${idx+1} · ${new Date(r.submitted_at).toLocaleString('vi-VN')}`;
 
     const f = (val) => val ? `<span class="val">${Array.isArray(val) ? val.map(v=>`<span class="tag">${v}</span>`).join(' ') : val}</span>` : `<span class="val empty">—</span>`;
     const row = (k, v) => `<div class="field-row"><span class="key">${k}</span>${f(v)}</div>`;
@@ -306,40 +853,40 @@ function showDetail(idx) {
 
     document.getElementById('modal-body').innerHTML = `
         <div class="field-group">
-            <h4>Khối A – Thông tin chung & Sàng lọc</h4>
+            <h4>Khối A – Thông Tin Chung & Sàng Lọc</h4>
             ${row('A1: Kinh nghiệm dự án VN 5 năm', rd.a1)}
-            ${row('A2: Vai trò chuyên môn', rd.a2)}
+            ${row('A2: Vai trò chuyên môn chính', rd.a2)}
             ${rd.a2_other ? row('A2 Khác', rd.a2_other) : ''}
-            ${row('A3: Số năm kinh nghiệm', rd.a3)}
-            ${row('A4: Quy mô tổ chức', rd.a4)}
-            ${row('A5: Kinh nghiệm dùng BIM', rd.a5)}
+            ${row('A3: Số năm kinh nghiệm ngành XD', rd.a3)}
+            ${row('A4: Quy mô tổ chức/doanh nghiệp', rd.a4)}
+            ${row('A5: Kinh nghiệm sử dụng/quản lý BIM', rd.a5)}
             ${row('A6: Dự án công trình xanh/carbon', rd.a6)}
         </div>
 
         <div class="field-group">
-            <h4>Khối B – Nhận biết & Tình trạng áp dụng BIM-LCA</h4>
+            <h4>Khối B – Nhận Biết & Tình Trạng BIM-LCA</h4>
             ${row('B1: Đã từng nghe/biết BIM-LCA', rd.b1)}
-            ${row('B2: Mức độ quen thuộc / kinh nghiệm', rd.b2)}
-            ${row('B3: Tình trạng & kế hoạch áp dụng', rd.b3)}
+            ${row('B2: Mức độ quen thuộc/kinh nghiệm', rd.b2)}
+            ${row('B3: Kế hoạch/thời điểm áp dụng tại đơn vị', rd.b3)}
         </div>
 
         <div class="field-group">
-            <h4>Khối C – Hiện trạng triển khai</h4>
-            ${row('C1: Mức độ đã dùng BIM', rd.c1)}
+            <h4>Khối C – Hiện Trạng Triển Khai & Công Nghệ</h4>
+            ${row('C1: Mức độ sử dụng BIM', rd.c1)}
             ${row('C2: Phạm vi mô-đun vòng đời', rd.c2)}
-            ${row('C3: Nhóm vật liệu đánh giá', rd.c3)}
+            ${row('C3: Nhóm vật liệu đánh giá carbon', rd.c3)}
             ${row('C4: Mục đích chính đánh giá carbon', rd.c4)}
             ${row('C5: Số dự án BIM-LCA tham gia', rd.c5)}
             ${row('C6: Tỷ lệ dự án áp dụng (3 năm)', rd.c6)}
-            ${row('C7: Mức độ áp dụng của đơn vị', rd.c7)}
+            ${row('C7: Mức độ áp dụng tại đơn vị', rd.c7)}
             ${row('C8: Công cụ BIM sử dụng', rd.c8)}
             ${row('C9: Công cụ LCA sử dụng', rd.c9)}
-            ${row('C10: Nguồn dữ liệu / hệ số phát thải', rd.c10)}
+            ${row('C10: Nguồn hệ số phát thải / LCI', rd.c10)}
             ${row('C11: Tiêu chuẩn / hướng dẫn', rd.c11)}
         </div>
 
         <div class="field-group">
-            <h4>C12: Điều kiện thuận lợi & Khoảng trống (Quan trọng - Sẵn có, Thang 1-5)</h4>
+            <h4>Khối C12 – Điều Kiện Thuận Lợi (QT: Quan Trọng | SC: Sẵn Có, Thang 1-5)</h4>
             <div class="likert-grid">
                 ${pill('TL1 Quan trọng', rd.c12_qt_1)} ${pill('TL1 Sẵn có', rd.c12_sc_1)}
                 ${pill('TL2 Quan trọng', rd.c12_qt_2)} ${pill('TL2 Sẵn có', rd.c12_sc_2)}
@@ -355,42 +902,42 @@ function showDetail(idx) {
         </div>
 
         <div class="field-group">
-            <h4>C13: Rào cản & Thách thức (Thang 1-5)</h4>
+            <h4>Khối C13 – Rào Cản & Thách Thức (Thang 1-5)</h4>
             <div class="likert-grid">
-                ${pill('DL1', rd.c13_1)} ${pill('DL2', rd.c13_2)}
-                ${pill('KTa1', rd.c13_3)} ${pill('KTa2', rd.c13_4)}
-                ${pill('PP1', rd.c13_5)} ${pill('PP2', rd.c13_6)}
-                ${pill('TC1', rd.c13_7)} ${pill('TC2', rd.c13_8)}
-                ${pill('NL1', rd.c13_9)} ${pill('NL2', rd.c13_10)}
-                ${pill('CSa1', rd.c13_11)} ${pill('CSa2', rd.c13_12)}
-                ${pill('TT1', rd.c13_13)} ${pill('TT2', rd.c13_14)}
-                ${pill('CC1', rd.c13_15)} ${pill('CC2', rd.c13_16)}
-                ${pill('RCT1', rd.c13_17)} ${pill('RCT2', rd.c13_18)}
-                ${pill('RCT3', rd.c13_19)} ${pill('RCT4', rd.c13_20)}
-                ${pill('RCT5', rd.c13_21)}
+                ${pill('DL1 (Thiếu CSDL EPD)', rd.c13_1)} ${pill('DL2 (Dùng data ngoại)', rd.c13_2)}
+                ${pill('KTa1 (Trao đổi BIM-LCA)', rd.c13_3)} ${pill('KTa2 (IFC chưa đủ)', rd.c13_4)}
+                ${pill('PP1 (Thiếu thống nhất PP)', rd.c13_5)} ${pill('PP2 (LOD chưa đủ)', rd.c13_6)}
+                ${pill('TC1 (Thiếu kỹ năng LCA)', rd.c13_7)} ${pill('TC2 (Thiếu đào tạo)', rd.c13_8)}
+                ${pill('NL1 (Chi phí phần mềm)', rd.c13_9)} ${pill('NL2 (Chi phí nhân sự)', rd.c13_10)}
+                ${pill('CSa1 (Thiếu luật bắt buộc)', rd.c13_11)} ${pill('CSa2 (Thiếu chứng nhận)', rd.c13_12)}
+                ${pill('TT1 (CĐT chưa yêu cầu)', rd.c13_13)} ${pill('TT2 (Thiếu động lực KT)', rd.c13_14)}
+                ${pill('CC1 (Plugin chưa phù hợp)', rd.c13_15)} ${pill('CC2 (Thiếu tin tưởng)', rd.c13_16)}
+                ${pill('RCT1 (Khó liên kết BIM-LCA)', rd.c13_17)} ${pill('RCT2 (Nhập thủ công)', rd.c13_18)}
+                ${pill('RCT3 (Khó cập nhật đồng bộ)', rd.c13_19)} ${pill('RCT4 (Khó đưa về BIM)', rd.c13_20)}
+                ${pill('RCT5 (Quy trình phân mảnh)', rd.c13_21)}
             </div>
         </div>
 
         <div class="field-group">
-            <h4>C14: Nhu cầu & Ưu tiên giải pháp</h4>
+            <h4>Khối C14 – Nhu Cầu & Ưu Tiên Giải Pháp</h4>
             <div class="likert-grid" style="margin-bottom:12px">
-                ${pill('NCT1 (Thang 1-5)', rd.c14_1)}
-                ${pill('NCT2 (Thang 1-5)', rd.c14_2)}
-                ${pill('NCT3 (Thang 1-5)', rd.c14_3)}
+                ${pill('NCT1 (Cần công cụ liên kết)', rd.c14_1)}
+                ${pill('NCT2 (Công cụ là điều kiện)', rd.c14_2)}
+                ${pill('NCT3 (Tăng khả năng áp dụng)', rd.c14_3)}
             </div>
             ${row('GP1: Dạng giải pháp ưu tiên', rd.gp1)}
             ${rd.gp1_other ? row('GP1 Khác', rd.gp1_other) : ''}
-            ${row('GP2: Nhóm giải pháp ưu tiên', rd.gp2)}
+            ${row('GP2: Nhóm giải pháp ưu tiên tại VN', rd.gp2)}
             ${row('GP3: Chức năng công cụ cần có', rd.gp3)}
         </div>
 
         <div class="field-group">
-            <h4>Khối D – Các yếu tố ảnh hưởng (Thang 1-7)</h4>
-            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D1 KT:</b> Khả thi kỹ thuật</p>
+            <h4>Khối D – Các Yếu Tố Ảnh Hưởng Ý Định (Thang 1-7)</h4>
+            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D1 KT:</b> Tính khả thi kỹ thuật</p>
             <div class="likert-grid" style="margin-bottom:8px">
                 ${pill('KT1', rd.d_1)} ${pill('KT2', rd.d_2)} ${pill('KT3', rd.d_3)} ${pill('KT4', rd.d_4)}
             </div>
-            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D2 QL:</b> Hỗ trợ của người quản lý</p>
+            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D2 QL:</b> Sự hỗ trợ của quản lý</p>
             <div class="likert-grid" style="margin-bottom:8px">
                 ${pill('QL1', rd.d_5)} ${pill('QL2', rd.d_6)} ${pill('QL3', rd.d_7)} ${pill('QL4', rd.d_8)}
             </div>
@@ -402,21 +949,21 @@ function showDetail(idx) {
             <div class="likert-grid" style="margin-bottom:8px">
                 ${pill('LI1', rd.d_13)} ${pill('LI2', rd.d_14)} ${pill('LI3', rd.d_15)} ${pill('LI4', rd.d_16)}
             </div>
-            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D5 CS:</b> Hỗ trợ của chính sách</p>
+            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D5 CS:</b> Sự hỗ trợ chính sách</p>
             <div class="likert-grid" style="margin-bottom:8px">
                 ${pill('CS1', rd.d_17)} ${pill('CS2', rd.d_18)} ${pill('CS3', rd.d_19)} ${pill('CS4', rd.d_20)}
             </div>
-            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D6 YD:</b> Ý định áp dụng (12 tháng tới)</p>
+            <p style="font-size:0.75rem;color:#777;margin-bottom:4px"><b>D6 YD:</b> Ý định áp dụng trong 12 tháng tới</p>
             <div class="likert-grid">
-                ${pill('YD1', rd.d_21)} ${pill('YD2', rd.d_22)} ${pill('YD3', rd.d_23)}
+                ${pill('YD1: Ý định', rd.d_21)} ${pill('YD2: Dự kiến', rd.d_22)} ${pill('YD3: Kế hoạch', rd.d_23)}
             </div>
         </div>
 
         <div class="field-group">
-            <h4>Khối E – Hồ sơ lợi ích kỳ vọng cụ thể (Thang 1-5)</h4>
+            <h4>Khối E – Hồ Sơ Lợi Ích Kỳ Vọng Cụ Thể (Thang 1-5)</h4>
             <div class="likert-grid">
-                ${pill('LIP1: Nhận diện nguồn phát thải', rd.e_1)}
-                ${pill('LIP2: Lựa chọn giải pháp carbon thấp', rd.e_2)}
+                ${pill('LIP1: Nhận diện nguồn carbon', rd.e_1)}
+                ${pill('LIP2: Chọn giải pháp carbon thấp', rd.e_2)}
                 ${pill('LIP3: Rút ngắn thời gian quy trình', rd.e_3)}
                 ${pill('LIP4: Cân bằng chi phí & carbon', rd.e_4)}
                 ${pill('LIP5: Đáp ứng chứng nhận công trình xanh', rd.e_5)}
@@ -425,7 +972,7 @@ function showDetail(idx) {
         </div>
 
         <div class="field-group">
-            <h4>Khối F – Hồ sơ kết quả đã ghi nhận (Thang 1-5)</h4>
+            <h4>Khối F – Kết Quả Đã Ghi Nhận Thực Tế (Thang 1-5)</h4>
             <div class="likert-grid">
                 ${pill('ROP1', rd.f_1)} ${pill('ROP2', rd.f_2)} ${pill('ROP3', rd.f_3)}
                 ${pill('ROP4', rd.f_4)} ${pill('ROP5', rd.f_5)} ${pill('ROP6', rd.f_6)}
@@ -433,12 +980,12 @@ function showDetail(idx) {
         </div>
 
         <div class="field-group">
-            <h4>Khối G – Ý kiến mở & Đăng ký phỏng vấn</h4>
+            <h4>Khối G – Ý Kiến Bổ Sung & Đăng Ký Phỏng Vấn</h4>
             ${row('I1: Nguyên nhân gốc rễ', rd.i1)}
             ${row('I2: Ví dụ dự án thực tế', rd.i2)}
-            ${row('I3: Đề xuất / ý kiến khác', rd.i3)}
-            ${row('I4: Sẵn sàng tham gia phỏng vấn', rd.i4)}
-            ${row('I5: Thông tin liên hệ', rd.i5)}
+            ${row('I3: Ý kiến đề xuất khác', rd.i3)}
+            ${row('I4: Sẵn sàng phỏng vấn', rd.i4)}
+            ${row('I5: Thông tin liên hệ ưu tiên', rd.i5)}
         </div>
     `;
     document.getElementById('modal-overlay').classList.add('open');
@@ -450,40 +997,40 @@ function closeModal(e) {
     }
 }
 
-// XUẤT EXCEL CHUẨN ĐẦY ĐỦ 100% CÁC CỘT BẰNG SHEETJS
+// XUẤT EXCEL CHUẨN 100% CÁC BIẾN DÙNG SHEETJS
 function buildFullFlatRow(r, i) {
     const rd = r.response_data || {};
     const joinArr = (v) => Array.isArray(v) ? v.join('; ') : (v || '');
     return {
         'STT': i + 1,
-        'Mã phản hồi': r.id,
-        'Thời gian nộp': new Date(r.submitted_at).toLocaleString('vi-VN'),
-        'Đồng ý tham gia': rd.consent || '',
-        'A1_Kinh nghiệm dự án VN 5 năm': rd.a1 || '',
-        'A2_Vai trò chuyên môn': rd.a2 || '',
+        'Mã_phản_hồi': r.id,
+        'Thời_gian_nộp': new Date(r.submitted_at).toLocaleString('vi-VN'),
+        'Đồng_ý_tham_gia': rd.consent || '',
+        'A1_Kinh_nghiệm_VN_5_năm': rd.a1 || '',
+        'A2_Vai_trò_chuyên_môn': rd.a2 || '',
         'A2_Khác': rd.a2_other || '',
-        'A3_Số năm kinh nghiệm': rd.a3 || '',
-        'A4_Quy mô tổ chức': rd.a4 || '',
-        'A5_Kinh nghiệm sử dụng BIM': rd.a5 || '',
-        'A6_Dự án công trình xanh/carbon': rd.a6 || '',
-        'B1_Từng nghe đến BIM-LCA': rd.b1 || '',
-        'B2_Mức độ quen thuộc/kinh nghiệm': rd.b2 || '',
-        'B3_Tình trạng áp dụng tại đơn vị': rd.b3 || '',
-        'C1_Mức độ dùng BIM': rd.c1 || '',
-        'C2_Phạm vi mô-đun vòng đời': joinArr(rd.c2),
-        'C3_Nhóm vật liệu đánh giá': joinArr(rd.c3),
-        'C4_Mục đích chính đánh giá carbon': joinArr(rd.c4),
-        'C5_Số dự án tích hợp BIM-LCA': rd.c5 || '',
-        'C6_Tỷ lệ dự án áp dụng (3 năm)': rd.c6 || '',
-        'C7_Mức độ áp dụng tại đơn vị': rd.c7 || '',
-        'C8_Công cụ BIM sử dụng': joinArr(rd.c8),
-        'C9_Công cụ LCA sử dụng': joinArr(rd.c9),
-        'C10_Nguồn dữ liệu phát thải LCI': joinArr(rd.c10),
-        'C11_Tiêu chuẩn hướng dẫn áp dụng': joinArr(rd.c11),
+        'A3_Số_năm_kinh_nghiệm': rd.a3 || '',
+        'A4_Quy_mô_tổ_chức': rd.a4 || '',
+        'A5_Kinh_nghiệm_dùng_BIM': rd.a5 || '',
+        'A6_Dự_án_xanh_carbon': rd.a6 || '',
+        'B1_Đã_biết_BIM_LCA': rd.b1 || '',
+        'B2_Mức_độ_quen_thuộc': rd.b2 || '',
+        'B3_Tình_trạng_áp_dụng': rd.b3 || '',
+        'C1_Mức_độ_dùng_BIM': rd.c1 || '',
+        'C2_Phạm_vi_mô_đun_vòng_đời': joinArr(rd.c2),
+        'C3_Nhóm_vật_liệu': joinArr(rd.c3),
+        'C4_Mục_đích_đánh_giá': joinArr(rd.c4),
+        'C5_Số_dự_án_BIM_LCA': rd.c5 || '',
+        'C6_Tỷ_lệ_dự_án_3_năm': rd.c6 || '',
+        'C7_Mức_độ_áp_dụng_đơn_vị': rd.c7 || '',
+        'C8_Công_cụ_BIM': joinArr(rd.c8),
+        'C9_Công_cụ_LCA': joinArr(rd.c9),
+        'C10_Nguồn_dữ_liệu_LCI': joinArr(rd.c10),
+        'C11_Tiêu_chuẩn_áp_dụng': joinArr(rd.c11),
 
         // C12 Điều kiện thuận lợi
-        'C12_TL1_QT_EPD_LCI_PhuHop': rd.c12_qt_1 || '',
-        'C12_TL1_SC_EPD_LCI_SanCo': rd.c12_sc_1 || '',
+        'C12_TL1_QT_EPD_LCI': rd.c12_qt_1 || '',
+        'C12_TL1_SC_EPD_LCI': rd.c12_sc_1 || '',
         'C12_TL2_QT_ThongTin_LOD': rd.c12_qt_2 || '',
         'C12_TL2_SC_ThongTin_LOD': rd.c12_sc_2 || '',
         'C12_TL3_QT_TuDien_VatLieu': rd.c12_qt_3 || '',
@@ -500,73 +1047,68 @@ function buildFullFlatRow(r, i) {
         'C12_TL8_SC_YeuCau_PhapLy': rd.c12_sc_8 || '',
         'C12_TL9_QT_ThiDiem_Benchmark': rd.c12_qt_9 || '',
         'C12_TL9_SC_ThiDiem_Benchmark': rd.c12_sc_9 || '',
-        'C12_TL10_QT_NguonLuc_ChiPhi': rd.c12_qt_10 || '',
-        'C12_TL10_SC_NguonLuc_ChiPhi': rd.c12_sc_10 || '',
+        'C12_TL10_QT_NguonLuc': rd.c12_qt_10 || '',
+        'C12_TL10_SC_NguonLuc': rd.c12_sc_10 || '',
 
         // C13 Rào cản
-        'C13_DL1_ThieuCSDL_EPD': rd.c13_1 || '',
-        'C13_DL2_DungCSDL_NuocNgoai': rd.c13_2 || '',
-        'C13_KTa1_ChuyenDoiDuLieu_Kho': rd.c13_3 || '',
-        'C13_KTa2_IFC_ChuaDuThongTin': rd.c13_4 || '',
-        'C13_PP1_ThieuThongNhat_RanhGioi': rd.c13_5 || '',
-        'C13_PP2_LOD_ChuaDuChiTiet': rd.c13_6 || '',
+        'C13_DL1_Thieu_CSDL_EPD': rd.c13_1 || '',
+        'C13_DL2_Dung_CSDL_NuocNgoai': rd.c13_2 || '',
+        'C13_KTa1_TraoDoi_DuLieu_Kho': rd.c13_3 || '',
+        'C13_KTa2_IFC_ChuaDu': rd.c13_4 || '',
+        'C13_PP1_Thieu_ThongNhat_PP': rd.c13_5 || '',
+        'C13_PP2_LOD_ChuaDu_ChiTiet': rd.c13_6 || '',
         'C13_TC1_NhanSu_ThieuKiNang': rd.c13_7 || '',
-        'C13_TC2_ThieuDaoTao_BIM_LCA': rd.c13_8 || '',
+        'C13_TC2_Thieu_DaoTao': rd.c13_8 || '',
         'C13_NL1_ChiPhi_PhanMem': rd.c13_9 || '',
         'C13_NL2_ChiPhi_DaoTao': rd.c13_10 || '',
-        'C13_CSa1_ThieuQuyDinh_BatBuoc': rd.c13_11 || '',
-        'C13_CSa2_ThieuChungNhan_NetZero': rd.c13_12 || '',
-        'C13_TT1_ChuDauTu_ChuaQuanTam': rd.c13_13 || '',
+        'C13_CSa1_Thieu_QuyDinh_BatBuoc': rd.c13_11 || '',
+        'C13_CSa2_Thieu_ChungNhan': rd.c13_12 || '',
+        'C13_TT1_ChuDauTu_ChuaYeuCau': rd.c13_13 || '',
         'C13_TT2_ThiTruong_ThieuDongLuc': rd.c13_14 || '',
         'C13_CC1_Plugin_ChuaPhuHopVN': rd.c13_15 || '',
-        'C13_CC2_ThieuTinTuong_TuDongHoa': rd.c13_16 || '',
-        'C13_RCT1_LienKetVatLieuBIM_Kho': rd.c13_17 || '',
-        'C13_RCT2_ThuCongNhapLaiDuLieu': rd.c13_18 || '',
+        'C13_CC2_ThieuTinTuong_TuDong': rd.c13_16 || '',
+        'C13_RCT1_LienKetVatLieu_BIM_Kho': rd.c13_17 || '',
+        'C13_RCT2_ThuCongNhapLai_DuLieu': rd.c13_18 || '',
         'C13_RCT3_MoHinhDoi_KhoCapNhat': rd.c13_19 || '',
-        'C13_RCT4_KhoDuaKetQuaVeBIM': rd.c13_20 || '',
-        'C13_RCT5_QuyTrinhPhanManh': rd.c13_21 || '',
+        'C13_RCT4_KhoDuaKetQua_VeBIM': rd.c13_20 || '',
+        'C13_RCT5_QuyTrinh_PhanManh': rd.c13_21 || '',
 
         // C14 Nhu cầu & Giải pháp
         'C14_NCT1_CanCongCuLienKet': rd.c14_1 || '',
         'C14_NCT2_CongCuLaDieuKien': rd.c14_2 || '',
         'C14_NCT3_TangKhaNangThamGia': rd.c14_3 || '',
-        'GP1_DangGiaiPhapUuTien': joinArr(rd.gp1),
-        'GP1_Khac': rd.gp1_other || '',
+        'GP1_DangGiaiPhap': joinArr(rd.gp1),
+        'GP1_Khác': rd.gp1_other || '',
         'GP2_NhomGiaiPhapUuTien': joinArr(rd.gp2),
         'GP3_ChucNangCanCo': joinArr(rd.gp3),
 
         // Khối D
         'D1_KT1_KhaThiKyThuat': rd.d_1 || '',
         'D1_KT2_YeuCauDuLieuDapUng': rd.d_2 || '',
-        'D1_KT3_XuLyTuongThichDuoc': rd.d_3 || '',
+        'D1_KT3_XuLyTuongThich': rd.d_3 || '',
         'D1_KT4_DanhGiaChung_KhaThi': rd.d_4 || '',
-
         'D2_QL1_LanhDaoDanhGiaCanThiet': rd.d_5 || '',
-        'D2_QL2_LanhDaoUngHoThuNghiem': rd.d_6 || '',
+        'D2_QL2_LanhDaoUngHo': rd.d_6 || '',
         'D2_QL3_LanhDaoSanSangHoTro': rd.d_7 || '',
         'D2_QL4_LanhDaoKhuyenKhich': rd.d_8 || '',
-
         'D3_TT1_ChuDauTuQuanTam': rd.d_9 || '',
         'D3_TT2_YeuCauNetZeroTang': rd.d_10 || '',
         'D3_TT3_NhuCauDichVuTang': rd.d_11 || '',
         'D3_TT4_KyVongNangLucBIM_LCA': rd.d_12 || '',
-
         'D4_LI1_HuuIchDanhGiaCarbon': rd.d_13 || '',
         'D4_LI2_ThucHienHieuQuaHon': rd.d_14 || '',
         'D4_LI3_NangCaoChatLuong': rd.d_15 || '',
         'D4_LI4_DanhGiaChung_CaiThien': rd.d_16 || '',
-
         'D5_CS1_ChinhSachThucDay': rd.d_17 || '',
         'D5_CS2_QuyDinhThuanLoi': rd.d_18 || '',
         'D5_CS3_DinhHuongHoTro': rd.d_19 || '',
         'D5_CS4_DanhGiaChung_MoiTruongCS': rd.d_20 || '',
-
         'D6_YD1_Y_Dinh_12_Thang': rd.d_21 || '',
         'D6_YD2_Du_Kien_12_Thang': rd.d_22 || '',
         'D6_YD3_Ke_Hoach_12_Thang': rd.d_23 || '',
 
         // Khối E
-        'E_LIP1_NhanDienNguonPhatThai': rd.e_1 || '',
+        'E_LIP1_NhanDienNguonCarbon': rd.e_1 || '',
         'E_LIP2_LuaChonGiaiPhapThap': rd.e_2 || '',
         'E_LIP3_RutNganThoiGian': rd.e_3 || '',
         'E_LIP4_CanBangChiPhiCarbon': rd.e_4 || '',
@@ -594,18 +1136,16 @@ function exportFullExcel() {
     if (!allData.length) return alert('Chưa có dữ liệu để xuất!');
     const flatRows = allData.map((r, i) => buildFullFlatRow(r, i));
 
-    // Tạo Workbook
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(flatRows);
 
-    // Tự động căn chỉnh độ rộng cột
     const colWidths = Object.keys(flatRows[0] || {}).map(k => ({
-        wch: Math.max(k.length + 2, 12)
+        wch: Math.max(k.length + 3, 14)
     }));
     ws['!cols'] = colWidths;
 
-    XLSX.utils.book_append_sheet(wb, ws, "Dữ Liệu Đầy Đủ");
-    const filename = `Khao_Sat_BIM_LCA_DayDu_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, "Toàn_Bộ_Biến_BIM_LCA");
+    const filename = `Khao_Sat_BIM_LCA_100_Phan_Tram_Bien_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb, filename);
 }
 
@@ -634,7 +1174,7 @@ function exportJSON() {
     if (!allData.length) return alert('Chưa có dữ liệu!');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' }));
-    a.download = `BIM_LCA_Survey_Data_${Date.now()}.json`;
+    a.download = `BIM_LCA_Survey_Raw_${Date.now()}.json`;
     a.click();
 }
 
