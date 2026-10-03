@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Khảo Sát BIM-LCA</title>
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --primary-light: #60ad5e;
+            --primary-dark: #005005;
+            --bg-color: #f4f6f4;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --error-color: #d32f2f;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header-banner {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header-banner h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            line-height: 1.4;
+        }
+
+        .info-box {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .info-box p {
+            margin: 5px 0;
+        }
+
+        .progress-container {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bar {
+            flex-grow: 1;
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-weight: bold;
+            color: var(--primary-color);
+            min-width: 45px;
+        }
+
+        .section {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .question {
+            margin-bottom: 25px;
+        }
+
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .question-title.required::after {
+            content: ' *';
+            color: var(--error-color);
+        }
+
+        .question-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .option-label:hover {
+            background-color: #f1f8e9;
+        }
+
+        input[type="radio"], input[type="checkbox"] {
+            margin-top: 4px;
+            accent-color: var(--primary-color);
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .matrix-table th, .matrix-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .matrix-table th {
+            background-color: #f5f5f5;
+            font-weight: normal;
+            font-size: 14px;
+        }
+
+        .matrix-table .row-title {
+            text-align: left;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .matrix-table .sub-row-title {
+            text-align: left;
+            padding-left: 20px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .scale-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .scale-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .scale-option span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: var(--text-color);
+        }
+        
+        .btn-success {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        #thank-you-screen {
+            display: none;
+            text-align: center;
+            padding: 50px 20px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .checkbox-limit-msg {
+            color: #f57c00;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .scale-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .scale-option {
+                flex-direction: row-reverse;
+                width: 100%;
+                justify-content: flex-end;
+            }
+            .matrix-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-container">
+    <div class="header-banner">
+        <h1>PHIẾU KHẢO SÁT THỰC TRẠNG VÀ CÁC YẾU TỐ ẢNH HƯỞNG ĐẾN Ý ĐỊNH ÁP DỤNG BIM-LCA TRONG ĐÁNH GIÁ PHÁT THẢI CARBON CÔNG TRÌNH XÂY DỰNG TẠI VIỆT NAM</h1>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Trường:</strong> ĐH Công Nghệ Kỹ thuật Tp.HCM - Khoa Xây Dựng</p>
+        <p><strong>Giảng viên hướng dẫn:</strong> PGS. TS. Hà Duy Khánh; TS. Nguyễn Văn Minh</p>
+        <p><strong>Nghiên cứu sinh:</strong> Huỳnh Trung Hiếu</p>
+        <p><strong>Email nhận kết quả:</strong> <a href="mailto:hieuht25.ncs@hcmute.edu.vn">hieuht25.ncs@hcmute.edu.vn</a></p>
+        <p><strong>Thời gian dự kiến:</strong> 15-20 phút</p>
+    </div>
+
+    <div class="progress-container" id="progress-container" style="display: none;">
+        <span>Tiến độ:</span>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-text" id="progress-text">0%</span>
+        <button class="btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="saveDraft()">Lưu tạm</button>
+    </div>
+
+    <form id="survey-form">
+        
+        <!-- ĐỒNG Ý THAM GIA -->
+        <div class="section active" id="sec-consent">
+            <h2 class="section-title">ĐỒNG Ý THAM GIA</h2>
+            <div class="question" data-id="consent">
+                <div class="question-title required">Tôi đã đọc thông tin trên và đồng ý tự nguyện tham gia khảo sát?</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="consent" value="Có" required> Có</label>
+                    <label class="option-label"><input type="radio" name="consent" value="Không"> Không</label>
+                </div>
+                <div class="error-message">Vui lòng chọn một tùy chọn.</div>
+            </div>
+            <div class="actions">
+                <div></div>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-consent', 'sec-a')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI A -->
+        <div class="section" id="sec-a">
+            <h2 class="section-title">KHỐI A – SÀNG LỌC VÀ THÔNG TIN CHUNG</h2>
+            
+            <div class="question" data-id="a1">
+                <div class="question-title required">A1: Anh/Chị hiện đang làm việc hoặc đã tham gia dự án xây dựng tại Việt Nam trong 5 năm gần đây?</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a1" value="Có kinh nghiệm dự án Việt Nam trong 5 năm" required> Có kinh nghiệm dự án Việt Nam trong 5 năm</label>
+                    <label class="option-label"><input type="radio" name="a1" value="Là kỹ sư/chuyên gia người Việt làm việc ở nước ngoài"> Là kỹ sư/chuyên gia người Việt trong ngành xây dựng nhưng hiện làm việc hoàn toàn ở nước ngoài</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="a2">
+                <div class="question-title required">A2: Vai trò chuyên môn chính (chọn 1)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a2" value="Chủ đầu tư/Ban QLDA" required> Chủ đầu tư/Ban QLDA</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Tư vấn thiết kế"> Tư vấn thiết kế (Kiến trúc sư/KS Kết cấu/KS MEPF)</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Tư vấn quản lý chi phí (QS)"> Tư vấn quản lý chi phí (QS)</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Tư vấn BIM"> Tư vấn BIM</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Tư vấn LCA/Công trình xanh/Bền vững"> Tư vấn LCA/Công trình xanh/Bền vững</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Nhà thầu thi công"> Nhà thầu thi công</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Nhà sản xuất/Cung cấp vật liệu"> Nhà sản xuất/Cung cấp vật liệu</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Cơ quan quản lý"> Cơ quan quản lý</label>
+                    <label class="option-label"><input type="radio" name="a2" value="Giảng viên/Nhà nghiên cứu"> Giảng viên/Nhà nghiên cứu</label>
+                    <label class="option-label">
+                        <input type="radio" name="a2" value="Khác"> Khác: 
+                        <input type="text" name="a2_other" style="width: auto; margin-left: 10px;" onclick="document.querySelector('input[name=\'a2\'][value=\'Khác\']').checked = true">
+                    </label>
+                </div>
+            </div>
+
+            <div class="question" data-id="a3">
+                <div class="question-title required">A3: Số năm kinh nghiệm trong ngành xây dựng</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a3" value="Dưới 5 năm" required> Dưới 5 năm</label>
+                    <label class="option-label"><input type="radio" name="a3" value="Trên 5 đến dưới 10 năm"> Trên 5 đến dưới 10 năm</label>
+                    <label class="option-label"><input type="radio" name="a3" value="Trên 10 đến dưới 15 năm"> Trên 10 đến dưới 15 năm</label>
+                    <label class="option-label"><input type="radio" name="a3" value="Trên 15 năm"> Trên 15 năm</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="a4">
+                <div class="question-title required">A4: Quy mô tổ chức</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a4" value="Dưới 100 nhân sự" required> Dưới 100 nhân sự</label>
+                    <label class="option-label"><input type="radio" name="a4" value="100–199 nhân sự"> 100–199 nhân sự</label>
+                    <label class="option-label"><input type="radio" name="a4" value="Từ 200 nhân sự trở lên"> Từ 200 nhân sự trở lên</label>
+                    <label class="option-label"><input type="radio" name="a4" value="Freelancer"> Hoạt động độc lập không thuộc tổ chức cố định (Freelancer)</label>
+                    <label class="option-label"><input type="radio" name="a4" value="Không rõ"> Không rõ quy mô tổ chức</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="a5">
+                <div class="question-title required">A5: Số năm kinh nghiệm trực tiếp sử dụng hoặc quản lý BIM</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a5" value="Chưa từng" required> Chưa từng</label>
+                    <label class="option-label"><input type="radio" name="a5" value="Dưới 1 năm"> Dưới 1 năm</label>
+                    <label class="option-label"><input type="radio" name="a5" value="1–3 năm"> 1–3 năm</label>
+                    <label class="option-label"><input type="radio" name="a5" value="Trên 3 đến 5 năm"> Trên 3 đến 5 năm</label>
+                    <label class="option-label"><input type="radio" name="a5" value="Trên 5 năm"> Trên 5 năm</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="a6">
+                <div class="question-title required">A6: Số dự án đã tham gia có đánh giá/chứng nhận công trình xanh hoặc carbon</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="a6" value="Chưa từng" required> Chưa từng</label>
+                    <label class="option-label"><input type="radio" name="a6" value="1 dự án"> 1 dự án</label>
+                    <label class="option-label"><input type="radio" name="a6" value="2–5 dự án"> 2–5 dự án</label>
+                    <label class="option-label"><input type="radio" name="a6" value="Trên 5 dự án"> Trên 5 dự án</label>
+                    <label class="option-label"><input type="radio" name="a6" value="Không rõ"> Không rõ</label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-a', 'sec-consent')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-a', 'sec-b')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI B -->
+        <div class="section" id="sec-b">
+            <h2 class="section-title">KHỐI B – NHẬN BIẾT VÀ KINH NGHIỆM/TÌNH TRẠNG SỬ DỤNG BIM-LCA</h2>
+            
+            <div class="question" data-id="b1">
+                <div class="question-title required">B1: Anh/Chị đã từng nghe đến việc tích hợp BIM với LCA (BIM-LCA) để đánh giá phát thải carbon công trình chưa?</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="b1" value="Đã từng nghe/biết đến BIM-LCA" required> Đã từng nghe/biết đến BIM-LCA</label>
+                    <label class="option-label"><input type="radio" name="b1" value="Chưa từng nghe/biết đến BIM-LCA"> Chưa từng nghe/biết đến BIM-LCA</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="b2">
+                <div class="question-title required">B2: Mức độ quen thuộc/kinh nghiệm của Anh/Chị với BIM-LCA (chọn mức cao nhất phù hợp)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="b2" value="Chưa từng tìm hiểu" required onchange="handleB2Change()"> Chưa từng tìm hiểu</label>
+                    <label class="option-label"><input type="radio" name="b2" value="Đã tìm hiểu nhưng chưa thử nghiệm" onchange="handleB2Change()"> Đã tìm hiểu nhưng chưa thử nghiệm</label>
+                    <label class="option-label"><input type="radio" name="b2" value="Đã thử nghiệm ở quy mô nhỏ hoặc dự án thí điểm" onchange="handleB2Change()"> Đã thử nghiệm ở quy mô nhỏ hoặc dự án thí điểm</label>
+                    <label class="option-label"><input type="radio" name="b2" value="Đang áp dụng hoặc đã áp dụng trong dự án thực tế" onchange="handleB2Change()"> Đang áp dụng hoặc đã áp dụng trong dự án thực tế</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="b3">
+                <div class="question-title required">B3: Tình trạng và thời điểm áp dụng tại đơn vị/công việc</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="b3" value="Chưa có kế hoạch cân nhắc" required> Chưa có kế hoạch cân nhắc</label>
+                    <label class="option-label"><input type="radio" name="b3" value="Đang cân nhắc trong 12 tháng tới"> Đang cân nhắc trong 12 tháng tới</label>
+                    <label class="option-label"><input type="radio" name="b3" value="Có kế hoạch cụ thể trong 12 tháng tới"> Có kế hoạch cụ thể trong 12 tháng tới</label>
+                    <label class="option-label"><input type="radio" name="b3" value="Đã bắt đầu thử nghiệm"> Đã bắt đầu thử nghiệm</label>
+                    <label class="option-label"><input type="radio" name="b3" value="Đang áp dụng chính thức trong dự án"> Đang áp dụng chính thức trong dự án</label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-b', 'sec-a')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-b', 'sec-c')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI C -->
+        <div class="section" id="sec-c">
+            <h2 class="section-title">KHỐI C – HIỆN TRẠNG TRIỂN KHAI VÀ ĐIỀU KIỆN</h2>
+            
+            <div class="question" data-id="c1">
+                <div class="question-title required">C1: Mức độ Anh/Chị đã sử dụng BIM trong công việc</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="c1" value="Chưa từng" required> Chưa từng</label>
+                    <label class="option-label"><input type="radio" name="c1" value="Xem/trao đổi mô hình"> Xem/trao đổi mô hình</label>
+                    <label class="option-label"><input type="radio" name="c1" value="Dùng mô hình 3D/triển khai bản vẽ/phối hợp"> Dùng mô hình 3D/triển khai bản vẽ/phối hợp</label>
+                    <label class="option-label"><input type="radio" name="c1" value="Bóc tích khối lượng/phân tích hiệu năng"> Bóc tích khối lượng/phân tích hiệu năng</label>
+                    <label class="option-label"><input type="radio" name="c1" value="Phân tích bền vững/môi trường"> Phân tích bền vững/môi trường</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c2">
+                <div class="question-title required">C2: Phạm vi mô-đun vòng đời Anh/Chị quan tâm hoặc đã từng đánh giá (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c2" value="A1–A3"> A1–A3 (Sản xuất)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="A4"> A4 (Vận chuyển)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="A5"> A5 (Thi công)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="B1–B7"> B1–B7 (Vận hành)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="C1–C4"> C1–C4 (Cuối vòng đời)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="D"> D (Ngoài ranh giới hệ thống)</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="Không xác định"> Không xác định theo mô-đun</label>
+                    <label class="option-label"><input type="checkbox" name="c2" value="Chưa đánh giá"> Chưa đánh giá/Không rõ</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c3">
+                <div class="question-title required">C3: Nhóm vật liệu quan tâm hoặc đã từng đánh giá carbon (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c3" value="Bê tông"> Bê tông</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Thép"> Thép</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Gạch và vữa"> Gạch và vữa</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Kính"> Kính</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Nhôm"> Nhôm</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Gỗ"> Gỗ</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Vật liệu cách nhiệt"> Vật liệu cách nhiệt</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Nhóm khác"> Nhóm khác</label>
+                    <label class="option-label"><input type="checkbox" name="c3" value="Chưa đánh giá"> Chưa đánh giá</label>
+                </div>
+            </div>
+
+            <!-- More C questions to save space -->
+            <div class="question" data-id="c4">
+                <div class="question-title required">C4: Mục đích chính của việc đánh giá carbon (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c4" value="So sánh phương án thiết kế"> So sánh phương án thiết kế</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Lựa chọn vật liệu"> Lựa chọn vật liệu</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Nhận diện nguồn vật liệu gây phát thải lớn"> Nhận diện nguồn vật liệu gây phát thải lớn</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Hỗ trợ đánh giá mối quan hệ giữa chi phí và carbon"> Hỗ trợ đánh giá mối quan hệ giữa chi phí và carbon</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Chứng nhận công trình xanh"> Chứng nhận công trình xanh</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Đáp ứng yêu cầu chủ đầu tư"> Đáp ứng yêu cầu chủ đầu tư</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Nghiên cứu học thuật"> Nghiên cứu học thuật</label>
+                    <label class="option-label"><input type="checkbox" name="c4" value="Chưa áp dụng"> Chưa áp dụng</label>
+                </div>
+            </div>
+            
+            <div class="question" data-id="c5">
+                <div class="question-title required">C5: Số dự án đã trực tiếp tham gia có tích hợp dữ liệu BIM với LCA/carbon</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="c5" value="Chưa từng" required> Chưa từng</label>
+                    <label class="option-label"><input type="radio" name="c5" value="1 dự án"> 1 dự án</label>
+                    <label class="option-label"><input type="radio" name="c5" value="2-5 dự án"> 2-5 dự án</label>
+                    <label class="option-label"><input type="radio" name="c5" value="Trên 5 dự án"> Trên 5 dự án</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c6">
+                <div class="question-title required">C6: Trong 3 năm gần đây, tỷ lệ dự án có áp dụng BIM-LCA tích hợp</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="c6" value="0%" required> 0%</label>
+                    <label class="option-label"><input type="radio" name="c6" value="1-10%"> 1-10%</label>
+                    <label class="option-label"><input type="radio" name="c6" value="11-30%"> 11-30%</label>
+                    <label class="option-label"><input type="radio" name="c6" value="31-50%"> 31-50%</label>
+                    <label class="option-label"><input type="radio" name="c6" value="Trên 50%"> Trên 50%</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c7">
+                <div class="question-title required">C7: Mức độ áp dụng hiện tại của đơn vị trong ứng dụng BIM-LCA (chọn 1)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 0" required> Mức 0 - Chưa sử dụng BIM hoặc LCA</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 1"> Mức 1 - Có BIM nhưng chưa đánh giá carbon</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 2"> Mức 2 - Có LCA/carbon nhưng dữ liệu chưa lấy từ BIM</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 3"> Mức 3 - BIM và LCA thực hiện riêng, trao đổi dữ liệu thủ công</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 4"> Mức 4 - Kết nối bán tự động qua Excel/CSV/IFC/script</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 5"> Mức 5 - Kết quả có thể cập nhật khi mô hình thay đổi</label>
+                    <label class="option-label"><input type="radio" name="c7" value="Mức 6"> Mức 6 - Quy trình đã chuẩn hóa, kiểm soát chất lượng, áp dụng thường xuyên</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c8">
+                <div class="question-title required">C8: Công cụ BIM đã/đang sử dụng (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c8" value="Revit"> Revit</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Archicad"> Archicad</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Tekla"> Tekla</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Navisworks"> Navisworks</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Civil 3D/InfraWorks"> Civil 3D/InfraWorks</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Rhino/Grasshopper"> Rhino/Grasshopper</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="BIM platform khác"> BIM platform khác</label>
+                    <label class="option-label"><input type="checkbox" name="c8" value="Chưa sử dụng"> Chưa sử dụng</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c9">
+                <div class="question-title required">C9: Công cụ LCA/đánh giá carbon đã/đang sử dụng (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c9" value="One Click LCA"> One Click LCA</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Tally"> Tally/TallyLCA</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="SimaPro"> SimaPro</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Sphera/GaBi"> Sphera/GaBi</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="openLCA"> openLCA</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Athena"> Athena</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Excel"> Excel/Bảng tính</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Công cụ nội bộ"> Công cụ nội bộ</label>
+                    <label class="option-label"><input type="checkbox" name="c9" value="Chưa sử dụng"> Chưa sử dụng</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c10">
+                <div class="question-title required">C10: Nguồn hệ số phát thải/dữ liệu LCI đã/sẽ sử dụng (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c10" value="EPD NSX"> EPD của nhà sản xuất</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="CSDL quốc tế"> Cơ sở dữ liệu quốc tế</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="CSDL trong nước"> Cơ sở dữ liệu/nghiên cứu trong nước</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="Dữ liệu sơ cấp"> Dữ liệu sơ cấp từ NSX/cung cấp</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="Hệ số quốc gia"> Hệ số quốc gia/ngành</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="Giá trị mặc định"> Giá trị mặc định/Giả định chuyên gia</label>
+                    <label class="option-label"><input type="checkbox" name="c10" value="Không rõ"> Không rõ</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="c11">
+                <div class="question-title required">C11: Tiêu chuẩn/hướng dẫn đã/sẽ sử dụng (chọn nhiều)</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" name="c11" value="TCVN ISO 14040/14044"> TCVN ISO 14040/14044</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="TCVN ISO 14067"> TCVN ISO 14067</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="TCVN 14177"> TCVN 14177 (ISO 19650)</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="EN 15978"> EN 15978</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="EN 15804"> EN 15804</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="ISO 21930"> ISO 21930</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="RICS"> RICS Whole Life Carbon</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="CTX"> Tiêu chuẩn/chứng nhận công trình xanh</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="Nội bộ"> Phương pháp nội bộ</label>
+                    <label class="option-label"><input type="checkbox" name="c11" value="Không rõ"> Không rõ</label>
+                </div>
+            </div>
+
+            <!-- C12 Matrix -->
+            <div class="question" data-id="c12">
+                <div class="question-title required">C12: Điều kiện thuận lợi và khoảng trống triển khai (đánh giá đồng thời Quan trọng và Sẵn có, thang 1-5)</div>
+                <div class="question-desc">1=Rất thấp, 5=Rất cao</div>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%">Điều kiện</th>
+                            <th>Đánh giá</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        </tr>
+                    </thead>
+                    <tbody id="c12-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- C13 Matrix -->
+            <div class="question" data-id="c13">
+                <div class="question-title required">C13: Rào cản và thách thức (thang 1-5)</div>
+                <div class="question-desc">1=Không phải rào cản, 5=Rất nghiêm trọng</div>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%">Rào cản / Thách thức</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        </tr>
+                    </thead>
+                    <tbody id="c13-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- C14 Matrix -->
+            <div class="question" data-id="c14">
+                <div class="question-title required">C14: Nhu cầu công cụ tích hợp (thang 1-5)</div>
+                <div class="question-desc">1=Hoàn toàn không đồng ý → 5=Hoàn toàn đồng ý</div>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%">Phát biểu</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        </tr>
+                    </thead>
+                    <tbody id="c14-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="question" data-id="gp1">
+                <div class="question-title required">GP1: Dạng giải pháp/công cụ được ưu tiên (chọn tối đa 2)</div>
+                <div class="options-group max-selection" data-max="2">
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Plug-in"> Plug-in trong phần mềm BIM hiện có</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Web"> Nền tảng web độc lập</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Desktop"> Phần mềm desktop</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Excel/BI"> Bộ công cụ Excel/BI kết nối BIM</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="QG"> Nền tảng dữ liệu carbon quốc gia</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Chuẩn hóa"> Quy trình/hướng dẫn chuẩn hóa thay vì công cụ mới</label>
+                    <label class="option-label"><input type="checkbox" name="gp1" value="Không cần"> Không cần phát triển giải pháp mới</label>
+                    <label class="option-label">
+                        <input type="checkbox" name="gp1" value="Khác"> Khác: 
+                        <input type="text" name="gp1_other" style="width: auto; margin-left: 10px;" onclick="document.querySelector('input[name=\'gp1\'][value=\'Khác\']').checked = true">
+                    </label>
+                </div>
+                <div class="checkbox-limit-msg">Vui lòng chọn tối đa 2 tùy chọn.</div>
+            </div>
+
+            <div class="question" data-id="gp2">
+                <div class="question-title required">GP2: Nhóm giải pháp cần ưu tiên để thúc đẩy BIM-LCA tại Việt Nam (chọn tối đa 3)</div>
+                <div class="options-group max-selection" data-max="3">
+                    <label class="option-label"><input type="checkbox" name="gp2" value="CSDL"> Xây dựng cơ sở dữ liệu phát thải carbon (EPD/LCI) quốc gia</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Quy định"> Ban hành quy định/tiêu chuẩn kỹ thuật bắt buộc về carbon hàm chứa</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Đào tạo"> Tổ chức chương trình đào tạo, chứng chỉ chuyên môn</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Thí điểm"> Thực hiện dự án thí điểm, nghiên cứu đối chứng</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Công cụ"> Phát triển/cục bộ hóa công cụ/phần mềm tích hợp chi phí thấp</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Chính sách"> Chính sách khuyến khích kinh tế (ưu đãi thuế, tín dụng xanh)</label>
+                    <label class="option-label"><input type="checkbox" name="gp2" value="Nhận thức"> Nâng cao nhận thức cộng đồng/chủ đầu tư qua truyền thông</label>
+                </div>
+                <div class="checkbox-limit-msg">Vui lòng chọn tối đa 3 tùy chọn.</div>
+            </div>
+
+            <div class="question" data-id="gp3">
+                <div class="question-title required">GP3: Chức năng cần có của công cụ tích hợp BIM-LCA (chọn tối đa 5)</div>
+                <div class="options-group max-selection" data-max="5">
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Nhập dữ liệu"> Nhập dữ liệu từ Revit, IFC và Excel</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Tự động bóc khối lượng"> Tự động bóc tích và kiểm tra khối lượng</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Từ điển VL VN"> Từ điển vật liệu và hệ số phát thải Việt Nam</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Ánh xạ tự động"> Ánh xạ BIM–EPD/LCI tự động nhưng cho phép xác nhận</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Điểm tin cậy"> Hiển thị điểm tin cậy và cảnh báo thiếu dữ liệu</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Tính A1-D"> Tính toán linh hoạt theo các mô-đun A1–D</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Quản lý LOD"> Quản lý LOD và bất định trong thiết kế sớm</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Kịch bản vòng đời"> Thiết lập kịch bản vận chuyển, tuổi thọ, thay thế</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Lưu lịch sử"> Lưu nguồn, phiên bản và lịch sử thay đổi dữ liệu</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="So sánh"> So sánh phương án carbon–chi phí–năng lượng</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Trực quan hóa"> Trực quan hóa cấu kiện/vật liệu có phát thải cao</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Xuất báo cáo"> Xuất báo cáo theo tiêu chuẩn/chứng nhận</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="API"> API mở để kết nối với phần mềm khác</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Kiểm tra sai lệch"> Kiểm tra sai lệch bằng bóc tích QS, benchmark</label>
+                    <label class="option-label"><input type="checkbox" name="gp3" value="Tối ưu đa mục tiêu"> Tối ưu đa mục tiêu carbon–chi phí–hiệu quả kỹ thuật</label>
+                </div>
+                <div class="checkbox-limit-msg">Vui lòng chọn tối đa 5 tùy chọn.</div>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-c', 'sec-b')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-c', 'sec-d')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI D -->
+        <div class="section" id="sec-d">
+            <h2 class="section-title">KHỐI D – MÔ TẢ CHUẨN HÓA VÀ CÁC YẾU TỐ ẢNH HƯỞNG ĐẾN Ý ĐỊNH ÁP DỤNG</h2>
+            <div class="info-box" style="margin-bottom: 25px; background: #e8f5e9; border-top: none; border-left: 4px solid var(--primary-color);">
+                <p><strong>BIM-LCA</strong> là quy trình sử dụng các mô hình Thông tin Công trình (BIM) để cung cấp dữ liệu đầu vào (khối lượng, loại vật liệu) tự động hoặc bán tự động cho các công cụ Đánh giá Vòng đời (LCA), nhằm tính toán lượng phát thải carbon của công trình một cách nhanh chóng và đồng bộ.</p>
+            </div>
+            
+            <p><em>Vui lòng đánh giá mức độ đồng ý của Anh/Chị theo thang điểm từ 1 (Hoàn toàn không đồng ý) đến 7 (Hoàn toàn đồng ý).</em></p>
+
+            <div class="question" data-id="block-d">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%">Phát biểu</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th>
+                        </tr>
+                    </thead>
+                    <tbody id="d-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-d', 'sec-c')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-d', 'sec-e')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI E -->
+        <div class="section" id="sec-e">
+            <h2 class="section-title">KHỐI E – HỆ SỐ LỢI ÍCH KỲ VỌNG CỤ THỂ</h2>
+            
+            <div class="question" data-id="block-e">
+                <div class="question-desc">Thang 1-5 (1=Không kỳ vọng, 5=Kỳ vọng rất cao)</div>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%">Lợi ích kỳ vọng</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        </tr>
+                    </thead>
+                    <tbody id="e-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-e', 'sec-d')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-e', 'sec-f', true)">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI F -->
+        <div class="section" id="sec-f">
+            <h2 class="section-title">KHỐI F – HỆ SỐ KẾT QUẢ ĐÃ GHI NHẬN</h2>
+            <div class="info-box" style="margin-bottom: 20px;">Phần này dành riêng cho Anh/Chị đã từng thử nghiệm hoặc áp dụng BIM-LCA.</div>
+            
+            <div class="question" data-id="block-f">
+                <div class="question-desc">Thang 1-5 (1=Hoàn toàn không đồng ý, 5=Hoàn toàn đồng ý)</div>
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%">Kết quả đã ghi nhận</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        </tr>
+                    </thead>
+                    <tbody id="f-tbody">
+                        <!-- Generates rows below -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-f', 'sec-e')">Quay lại</button>
+                <button type="button" class="btn-primary btn-next" onclick="nextSection('sec-f', 'sec-g')">Tiếp theo</button>
+            </div>
+        </div>
+
+        <!-- KHỐI G -->
+        <div class="section" id="sec-g">
+            <h2 class="section-title">KHỐI G – Ý KIẾN BỔ SUNG VÀ ĐĂNG KÝ PHỎNG VẤN</h2>
+            
+            <div class="question" data-id="i1">
+                <div class="question-title">I1: Theo Anh/Chị, nguyên nhân gốc quan trọng nhất khiến BIM-LCA chưa được áp dụng rộng rãi tại Việt Nam là gì? Vì sao?</div>
+                <textarea name="i1" rows="4"></textarea>
+            </div>
+
+            <div class="question" data-id="i2">
+                <div class="question-title">I2: Anh/Chị có thể chia sẻ một ví dụ dự án, tình huống hoặc bài học thực tế liên quan đến BIM và/hoặc đánh giá carbon không?</div>
+                <textarea name="i2" rows="4"></textarea>
+            </div>
+
+            <div class="question" data-id="i3">
+                <div class="question-title">I3: Ý kiến hoặc đề xuất quan trọng khác chưa được phản ánh trong phiếu:</div>
+                <textarea name="i3" rows="3"></textarea>
+            </div>
+
+            <div class="question" data-id="i4">
+                <div class="question-title required">I4: Anh/Chị có sẵn sàng tham gia phỏng vấn bán cấu trúc 45–60 phút ở giai đoạn tiếp theo không?</div>
+                <div class="options-group">
+                    <label class="option-label"><input type="radio" name="i4" value="Có" required> Có</label>
+                    <label class="option-label"><input type="radio" name="i4" value="Không"> Không</label>
+                    <label class="option-label"><input type="radio" name="i4" value="Có thể"> Có thể, vui lòng liên hệ trao đổi thêm</label>
+                </div>
+            </div>
+
+            <div class="question" data-id="i5">
+                <div class="question-title">I5: Thông tin liên hệ ưu tiên (tùy chọn, chỉ dùng để mời phỏng vấn):</div>
+                <input type="text" name="i5" placeholder="Email hoặc Số điện thoại...">
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="prevSection('sec-g', 'sec-f', true)">Quay lại</button>
+                <button type="submit" class="btn-success">Gửi khảo sát</button>
+            </div>
+        </div>
+    </form>
+
+    <div id="thank-you-screen">
+        <h2 style="color: var(--primary-color);">Chân thành cảm ơn Anh/Chị!</h2>
+        <p>Những đóng góp của Anh/Chị là vô cùng quý giá đối với nghiên cứu này.</p>
+        <p>Kết quả khảo sát đã được ghi nhận thành công.</p>
+        <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+            <button class="btn-primary" id="btn-download">Tải bản sao (JSON)</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Config Data
+    const C12_ITEMS = [
+        "TL1: EPD/LCI và hệ số phát thải phù hợp với vật liệu, công nghệ và năng lượng tại Việt Nam",
+        "TL2: Yêu cầu thông tin BIM tối thiểu và độ tin cậy dữ liệu theo từng giai đoạn/LOD",
+        "TL3: Từ điển vật liệu, mã phân loại và đơn vị đo thống nhất",
+        "TL4: Hướng dẫn thống nhất về mục tiêu, ranh giới, đơn vị chức năng và mô-đun vòng đời",
+        "TL5: Khả năng liên thông qua IFC, API hoặc định dạng mở",
+        "TL6: Nhân sự có kiến thức kết hợp BIM, LCA và chuyên môn xây dựng",
+        "TL7: Cam kết và phối hợp của lãnh đạo, chủ đầu tư, thiết kế, QS, BIM và tư vấn bền vững",
+        "TL8: Yêu cầu pháp lý, tiêu chuẩn, chỉ tiêu hoặc yêu cầu hợp đồng về carbon đủ rõ để áp dụng",
+        "TL9: Dự án thí điểm, benchmark và quy trình kiểm chứng tại Việt Nam",
+        "TL10: Nguồn lực phù hợp về thời gian, chi phí, phần mềm và quản trị dữ liệu"
+    ];
+
+    const C13_ITEMS = [
+        { group: "Nhóm Dữ liệu", items: ["DL1: Việt Nam thiếu cơ sở dữ liệu hệ số phát thải (EPD/LCI) cho vật liệu xây dựng phổ biến trong nước", "DL2: Việc phải dùng dữ liệu phát thải nước ngoài làm giảm độ tin cậy kết quả đánh giá"] },
+        { group: "Nhóm Kỹ thuật", items: ["KTa1: Việc chuyển đổi/trao đổi dữ liệu giữa phần mềm BIM và phần mềm LCA còn nhiều khó khăn, dễ sai lệch", "KTa2: Định dạng dữ liệu mở (IFC) hiện tại chưa đủ khả năng mô tả thông tin môi trường cần thiết cho LCA"] },
+        { group: "Nhóm Phương pháp", items: ["PP1: Thiếu sự thống nhất về phương pháp/ranh giới đánh giá (LOD, giai đoạn vòng đời, đơn vị chức năng)", "PP2: Mức độ phát triển mô hình BIM (LOD) hiện dùng trong thực hành thường chưa đủ chi tiết cho LCA đáng tin cậy"] },
+        { group: "Nhóm Tổ chức", items: ["TC1: Đội ngũ kỹ thuật tại đơn vị thiếu kiến thức/kỹ năng thực hành về LCA", "TC2: Chương trình đào tạo về BIM-LCA tại Việt Nam còn thiếu hoặc chưa đầy đủ"] },
+        { group: "Nhóm Nguồn lực", items: ["NL1: Chi phí phần mềm BIM/LCA chuyên dụng là rào cản đáng kể, đặc biệt với DN vừa và nhỏ", "NL2: Chi phí đào tạo nhân sự để vận hành quy trình BIM-LCA là rào cản đáng kể"] },
+        { group: "Nhóm Chính sách", items: ["CSa1: Việt Nam thiếu quy định pháp lý/tiêu chuẩn kỹ thuật bắt buộc về carbon hàm chứa cho công trình", "CSa2: Việt Nam thiếu cơ chế đánh giá/chứng nhận công trình phát thải thấp hoặc Net Zero Carbon chính thức"] },
+        { group: "Nhóm Thị trường", items: ["TT1: Chủ đầu tư tại Việt Nam nhìn chung chưa quan tâm/yêu cầu đánh giá phát thải carbon trong hợp đồng dự án", "TT2: Thị trường bất động sản/xây dựng Việt Nam chưa tạo đủ động lực kinh tế cho công trình phát thải thấp"] },
+        { group: "Nhóm Công cụ", items: ["CC1: Các plugin/phần mềm BIM-LCA thương mại hiện có cho kết quả chưa phù hợp khi áp dụng vào bối cảnh Việt Nam", "CC2: Tôi thiếu tin tưởng vào độ chính xác của kết quả LCA khi tự động hóa hoàn toàn từ mô hình BIM"] },
+        { group: "Rào cản có thể xử lý trực tiếp bằng công cụ", items: ["RCT1: Việc liên kết thông tin vật liệu và khối lượng từ mô hình BIM với dữ liệu phát thải carbon là khó thực hiện.", "RCT2: Quy trình BIM-LCA có thể đòi hỏi chuyển hoặc nhập lại dữ liệu thủ công giữa các phần mềm.", "RCT3: Khi mô hình BIM thay đổi, kết quả đánh giá carbon khó được cập nhật đồng bộ.", "RCT4: Kết quả đánh giá carbon khó được đưa trở lại môi trường BIM để so sánh các phương án thiết kế.", "RCT5: Quy trình BIM-LCA dễ bị phân mảnh vì các phần mềm và nguồn dữ liệu thiếu khả năng liên thông."] }
+    ];
+
+    const C14_ITEMS = [
+        "NCT1: Để có thể tham gia thử nghiệm BIM-LCA trong công việc, tôi cần một công cụ liên kết dữ liệu BIM với dữ liệu carbon.",
+        "NCT2: Một công cụ BIM-LCA tích hợp là điều kiện quan trọng để tôi có thể tham gia thử nghiệm trên dự án thực tế.",
+        "NCT3: Có công cụ BIM-LCA tích hợp sẽ làm tăng đáng kể khả năng tôi tham gia một thử nghiệm trong công việc."
+    ];
+
+    const D_ITEMS = [
+        { group: "D1 KT – Tính khả thi kỹ thuật", items: ["KT1: Tôi nhận thấy việc tích hợp BIM với LCA để đánh giá phát thải carbon là khả thi về mặt kỹ thuật.", "KT2: Tôi nhận thấy các yêu cầu cơ bản về dữ liệu để triển khai BIM-LCA có thể được đáp ứng trong bối cảnh công việc hiện nay.", "KT3: Tôi nhận thấy các vấn đề về tương thích và trao đổi dữ liệu giữa BIM và LCA có thể được xử lý bằng các giải pháp kỹ thuật hiện có.", "KT4: Nhìn chung, tôi đánh giá BIM-LCA có thể được triển khai về mặt kỹ thuật trong thực tiễn công việc."] },
+        { group: "D2 QL – Sự hỗ trợ của người quản lý", items: ["QL1: Lãnh đạo hoặc quản lý tại đơn vị của tôi đánh giá việc phát triển năng lực BIM-LCA là cần thiết.", "QL2: Lãnh đạo hoặc quản lý tại đơn vị của tôi ủng hộ việc thử nghiệm và áp dụng BIM-LCA.", "QL3: Lãnh đạo hoặc quản lý tại đơn vị của tôi sẵn sàng hỗ trợ việc triển khai BIM-LCA khi có nhu cầu phù hợp.", "QL4: Lãnh đạo hoặc quản lý tại đơn vị của tôi khuyến khích nhân sự phát triển kiến thức và năng lực liên quan đến BIM-LCA."] },
+        { group: "D3 TT – Nhu cầu thị trường", items: ["TT1: Chủ đầu tư hoặc khách hàng ngày càng quan tâm đến việc đánh giá và giảm phát thải carbon của công trình.", "TT2: Chủ đầu tư hoặc khách hàng ngày càng đưa ra nhiều yêu cầu liên quan đến công trình xanh, carbon thấp hoặc net-zero trong các dự án.", "TT3: Nhu cầu từ khách hàng đối với các dịch vụ đánh giá carbon tích hợp với BIM đang có xu hướng gia tăng.", "TT4: Năng lực đánh giá carbon ngày càng trở thành một năng lực mà khách hàng hoặc chủ đầu tư kỳ vọng ở các đơn vị tham gia dự án."] },
+        { group: "D4 LI – Lợi ích kỳ vọng", items: ["LI1: Tôi kỳ vọng BIM-LCA sẽ hữu ích cho các nhiệm vụ liên quan đến đánh giá carbon.", "LI2: Tôi kỳ vọng BIM-LCA sẽ giúp thực hiện các nhiệm vụ đánh giá carbon hiệu quả hơn.", "LI3: Tôi kỳ vọng BIM-LCA sẽ nâng cao chất lượng công việc và các quyết định liên quan đến carbon.", "LI4: Nhìn chung, tôi kỳ vọng BIM-LCA sẽ cải thiện hiệu quả thực hiện các nhiệm vụ liên quan đến đánh giá và quản lý carbon."] },
+        { group: "D5 CS – Sự hỗ trợ của chính sách", items: ["CS1: Tôi nhận thấy các định hướng chính sách hiện nay đang thúc đẩy việc đánh giá và giảm phát thải carbon trong ngành xây dựng.", "CS2: Tôi nhận thấy các quy định, tiêu chuẩn và hướng dẫn hiện hành tạo cơ sở thuận lợi cho việc triển khai BIM-LCA.", "CS3: Tôi nhận thấy các định hướng chính sách liên quan đến BIM, công trình xanh và giảm phát thải đang hỗ trợ sự phát triển của BIM-LCA.", "CS4: Nhìn chung, tôi đánh giá môi trường chính sách hiện nay có tính hỗ trợ đối với việc phát triển và áp dụng BIM-LCA tại Việt Nam."] },
+        { group: "D6 YD – Ý định áp dụng (trong 12 tháng tới)", items: ["YD1: Tôi có ý định áp dụng BIM-LCA trong công việc hoặc dự án của mình trong 12 tháng tới.", "YD2: Tôi dự kiến sẽ áp dụng BIM-LCA trong công việc hoặc dự án của mình trong 12 tháng tới.", "YD3: Tôi có kế hoạch áp dụng BIM-LCA trong công việc hoặc dự án của mình trong 12 tháng tới."] }
+    ];
+
+    const E_ITEMS = [
+        "LIP1: Nhận diện các nguồn hoặc vật liệu đóng góp lớn vào phát thải carbon.",
+        "LIP2: Hỗ trợ lựa chọn giải pháp hoặc vật liệu carbon thấp.",
+        "LIP3: Rút ngắn thời gian hoặc nâng cao hiệu quả quy trình đánh giá.",
+        "LIP4: Hỗ trợ cân bằng hoặc tối ưu chi phí và carbon.",
+        "LIP5: Hỗ trợ đáp ứng yêu cầu công trình xanh, carbon hoặc chứng nhận.",
+        "LIP6: Nâng cao năng lực cạnh tranh và khả năng đáp ứng yêu cầu khách hàng."
+    ];
+
+    const F_ITEMS = [
+        "ROP1: Thực tế đã hỗ trợ nhận diện các nguồn hoặc vật liệu đóng góp lớn vào carbon.",
+        "ROP2: Thực tế đã hỗ trợ lựa chọn giải pháp hoặc vật liệu carbon thấp.",
+        "ROP3: Thực tế đã cải thiện thời gian hoặc hiệu quả quy trình đánh giá.",
+        "ROP4: Thực tế đã hỗ trợ quyết định cân bằng chi phí và carbon.",
+        "ROP5: Thực tế đã hỗ trợ đáp ứng yêu cầu công trình xanh, carbon hoặc chứng nhận.",
+        "ROP6: Thực tế đã tạo giá trị về năng lực cạnh tranh hoặc đáp ứng yêu cầu khách hàng."
+    ];
+
+    // Generate Matrix Tables
+    function genMatrix(items, tbodyId, namePrefix, scale) {
+        let tbody = document.getElementById(tbodyId);
+        let html = '';
+        items.forEach((item, index) => {
+            let id = `${namePrefix}_${index+1}`;
+            html += `<tr><td class="row-title">${item}</td>`;
+            for(let i=1; i<=scale; i++) {
+                html += `<td><input type="radio" name="${id}" value="${i}" required></td>`;
+            }
+            html += `</tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function genMatrixC12() {
+        let tbody = document.getElementById('c12-tbody');
+        let html = '';
+        C12_ITEMS.forEach((item, index) => {
+            html += `<tr><td class="row-title" rowspan="2">${item}</td>`;
+            html += `<td>Quan trọng</td>`;
+            for(let i=1; i<=5; i++) html += `<td><input type="radio" name="c12_qt_${index+1}" value="${i}" required></td>`;
+            html += `</tr><tr><td>Sẵn có</td>`;
+            for(let i=1; i<=5; i++) html += `<td><input type="radio" name="c12_sc_${index+1}" value="${i}" required></td>`;
+            html += `</tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function genMatrixGrouped(groups, tbodyId, namePrefix, scale) {
+        let tbody = document.getElementById(tbodyId);
+        let html = '';
+        let qCount = 1;
+        groups.forEach(group => {
+            html += `<tr style="background:#eef"><td colspan="${scale+1}" class="row-title">${group.group}</td></tr>`;
+            group.items.forEach(item => {
+                let id = `${namePrefix}_${qCount}`;
+                html += `<tr><td class="sub-row-title">${item}</td>`;
+                for(let i=1; i<=scale; i++) {
+                    html += `<td><input type="radio" name="${id}" value="${i}" required></td>`;
+                }
+                html += `</tr>`;
+                qCount++;
+            });
+        });
+        tbody.innerHTML = html;
+    }
+
+    // Init
+    genMatrixC12();
+    genMatrixGrouped(C13_ITEMS, 'c13-tbody', 'c13', 5);
+    genMatrix(C14_ITEMS, 'c14-tbody', 'c14', 5);
+    genMatrixGrouped(D_ITEMS, 'd-tbody', 'd', 7);
+    genMatrix(E_ITEMS, 'e-tbody', 'e', 5);
+    genMatrix(F_ITEMS, 'f-tbody', 'f', 5);
+
+    // Variables & Logic
+    const sections = ['sec-consent', 'sec-a', 'sec-b', 'sec-c', 'sec-d', 'sec-e', 'sec-f', 'sec-g'];
+    let showSectionF = false;
+
+    function handleB2Change() {
+        const val = document.querySelector('input[name="b2"]:checked')?.value;
+        showSectionF = (val === 'Đã thử nghiệm ở quy mô nhỏ hoặc dự án thí điểm' || val === 'Đang áp dụng hoặc đã áp dụng trong dự án thực tế');
+    }
+
+    function updateProgress() {
+        const total = sections.length - (showSectionF ? 0 : 1);
+        let current = 0;
+        let activeId = document.querySelector('.section.active').id;
+        
+        for(let i=0; i<sections.length; i++) {
+            if(sections[i] === 'sec-f' && !showSectionF) continue;
+            current++;
+            if(sections[i] === activeId) break;
+        }
+        
+        let percent = Math.round((current / total) * 100);
+        document.getElementById('progress-fill').style.width = percent + '%';
+        document.getElementById('progress-text').innerText = percent + '%';
+    }
+
+    function validateSection(sectionId) {
+        let section = document.getElementById(sectionId);
+        let valid = true;
+        
+        // Hide previous errors
+        section.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+        section.querySelectorAll('.question-title').forEach(el => el.style.color = '');
+
+        // Check native required
+        const requiredInputs = section.querySelectorAll('input[required]');
+        let invalidNames = new Set();
+        
+        requiredInputs.forEach(input => {
+            if (input.type === 'radio') {
+                const checked = section.querySelector(`input[name="${input.name}"]:checked`);
+                if (!checked) invalidNames.add(input.name);
+            } else if (input.type === 'checkbox') {
+                 // Checkboxes typically don't have native required in groups, handled manually if needed
+            } else if (!input.value.trim()) {
+                invalidNames.add(input.name);
+            }
+        });
+
+        // Check required checkbox groups explicitly
+        const requiredCheckboxGroups = ['c2', 'c3', 'c4', 'c8', 'c9', 'c10', 'c11', 'gp1', 'gp2', 'gp3'];
+        requiredCheckboxGroups.forEach(groupName => {
+            const groupInputs = section.querySelectorAll(`input[name="${groupName}"]`);
+            if(groupInputs.length > 0) {
+                const checked = section.querySelectorAll(`input[name="${groupName}"]:checked`).length;
+                if(checked === 0) {
+                    invalidNames.add(groupName);
+                }
+            }
+        });
+
+        if (invalidNames.size > 0) {
+            valid = false;
+            // Highlight first error
+            const firstErrorName = Array.from(invalidNames)[0];
+            const firstErrorEl = section.querySelector(`input[name="${firstErrorName}"]`);
+            if (firstErrorEl) {
+                const qDiv = firstErrorEl.closest('.question');
+                if(qDiv) {
+                    qDiv.querySelector('.question-title').style.color = 'var(--error-color)';
+                    let err = qDiv.querySelector('.error-message');
+                    if(!err) {
+                        err = document.createElement('div');
+                        err.className = 'error-message';
+                        err.innerText = 'Vui lòng hoàn thành phần này.';
+                        qDiv.appendChild(err);
+                    }
+                    err.style.display = 'block';
+                    qDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        return valid;
+    }
+
+    function nextSection(currentId, nextId, isBack = false) {
+        if (!validateSection(currentId)) return;
+
+        // Consent Logic
+        if (currentId === 'sec-consent') {
+            const consent = document.querySelector('input[name="consent"]:checked').value;
+            if (consent === 'Không') {
+                document.getElementById('survey-form').style.display = 'none';
+                document.getElementById('thank-you-screen').style.display = 'block';
+                document.querySelector('#thank-you-screen p').innerText = 'Cảm ơn Anh/Chị đã quan tâm. Rất tiếc vì khảo sát không phù hợp vào lúc này.';
+                document.getElementById('btn-download').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('progress-container').style.display = 'flex';
+            }
+        }
+
+        // Skip F Logic
+        if (nextId === 'sec-f' && !showSectionF) {
+            nextId = isBack ? 'sec-e' : 'sec-g'; 
+        }
+
+        document.getElementById(currentId).classList.remove('active');
+        document.getElementById(nextId).classList.add('active');
+        window.scrollTo(0, 0);
+        updateProgress();
+    }
+
+    function prevSection(currentId, prevId, isBack = true) {
+        // Skip F Logic
+        if (prevId === 'sec-f' && !showSectionF) {
+            prevId = 'sec-e';
+        }
+        
+        document.getElementById(currentId).classList.remove('active');
+        document.getElementById(prevId).classList.add('active');
+        window.scrollTo(0, 0);
+        updateProgress();
+    }
+
+    // Max checkbox selections limits
+    document.querySelectorAll('.max-selection').forEach(group => {
+        const max = parseInt(group.getAttribute('data-max'));
+        const checkboxes = group.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checked = group.querySelectorAll('input[type="checkbox"]:checked');
+                if (checked.length >= max) {
+                    checkboxes.forEach(bx => {
+                        if (!bx.checked) bx.disabled = true;
+                    });
+                } else {
+                    checkboxes.forEach(bx => bx.disabled = false);
+                }
+            });
+        });
+    });
+
+    // Save Draft
+    function saveDraft() {
+        const formData = new FormData(document.getElementById('survey-form'));
+        const data = Object.fromEntries(formData.entries());
+        
+        // Handle multiple checkboxes manually because FormData only keeps last value for duplicate names
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        const checkData = {};
+        checkboxes.forEach(cb => {
+            if(!checkData[cb.name]) checkData[cb.name] = [];
+            checkData[cb.name].push(cb.value);
+        });
+        
+        const finalData = { ...data, ...checkData };
+        localStorage.setItem('bim_lca_draft', JSON.stringify(finalData));
+        alert('Đã lưu nháp. Bạn có thể quay lại tiếp tục sau.');
+    }
+
+    // Load Draft
+    window.onload = function() {
+        const draft = localStorage.getItem('bim_lca_draft');
+        if (draft) {
+            try {
+                const data = JSON.parse(draft);
+                for (let key in data) {
+                    if (Array.isArray(data[key])) {
+                        data[key].forEach(val => {
+                            let el = document.querySelector(`input[name="${key}"][value="${val}"]`);
+                            if (el) el.checked = true;
+                        });
+                    } else {
+                        let elRadio = document.querySelector(`input[name="${key}"][value="${data[key]}"]`);
+                        if (elRadio && elRadio.type === 'radio') {
+                            elRadio.checked = true;
+                        } else {
+                            let elText = document.querySelector(`[name="${key}"]`);
+                            if (elText && (elText.type === 'text' || elText.tagName === 'TEXTAREA')) {
+                                elText.value = data[key];
+                            }
+                        }
+                    }
+                }
+                handleB2Change();
+            } catch(e) {}
+        }
+    }
+
+    // Submit handler
+    let surveyResult = {};
+    document.getElementById('survey-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if(!validateSection('sec-g')) return;
+
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        const checkData = {};
+        checkboxes.forEach(cb => {
+            if(!checkData[cb.name]) checkData[cb.name] = [];
+            checkData[cb.name].push(cb.value);
+        });
+        
+        surveyResult = { ...data, ...checkData, submittedAt: new Date().toISOString() };
+        
+        // Clear draft
+        localStorage.removeItem('bim_lca_draft');
+
+        // Show thank you
+        document.getElementById('survey-form').style.display = 'none';
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('thank-you-screen').style.display = 'block';
+        window.scrollTo(0, 0);
+
+        // Open Mailto link
+        const subject = encodeURIComponent("Kết quả khảo sát BIM-LCA");
+        const body = encodeURIComponent("Chào NCS,\n\nĐây là file kết quả của tôi (Đính kèm file tải xuống).");
+        window.location.href = `mailto:hieuht25.ncs@hcmute.edu.vn?subject=${subject}&body=${body}`;
+    });
+
+    // Download JSON
+    document.getElementById('btn-download').addEventListener('click', function() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(surveyResult, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "Survey_Result_BIM_LCA_" + new Date().getTime() + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    });
+
+</script>
+</body>
+</html>
