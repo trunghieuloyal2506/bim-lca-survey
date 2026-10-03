@@ -530,7 +530,21 @@ function renderStats() {
     `;
 }
 
-const GREEN = ['#1b5e20','#2e7d32','#388e3c','#43a047','#4caf50','#66bb6a','#81c784','#a5d6a7','#c8e6c9','#e8f5e9'];
+// BẢNG MÀU TƯƠNG PHẢN CAO (HIGH CONTRAST PALETTE)
+const CONTRAST_PALETTE = [
+    '#1976d2', // Xanh lam đậm (Blue)
+    '#d32f2f', // Đỏ thắm (Red)
+    '#2e7d32', // Xanh lục đậm (Green)
+    '#f57c00', // Cam tươi (Orange)
+    '#7b1fa2', // Tím hoa cà (Purple)
+    '#0097a7', // Xanh mòng két / Cyan (Teal)
+    '#fbc02d', // Vàng nghệ (Yellow)
+    '#3949ab', // Lam chàm (Indigo)
+    '#c2185b', // Hồng đậm (Pink)
+    '#5d4037', // Nâu cà phê (Brown)
+    '#455a64', // Xám than (Slate)
+    '#689f38'  // Xanh quả bơ (Lime)
+];
 
 function countSingle(field) {
     const c = {};
@@ -556,21 +570,24 @@ function drawChart(id, type, labels, data, options = {}) {
     if (charts[id]) charts[id].destroy();
     const ctx = document.getElementById(id).getContext('2d');
     
-    // Default showLegend: true for multi-datasets or pie/doughnut/radar, false for simple single-dataset bar charts
     const hasMultipleDatasets = options.datasets && options.datasets.length > 1;
     const isPieOrRadar = type === 'doughnut' || type === 'pie' || type === 'radar';
     const showLegend = options.showLegend !== undefined ? options.showLegend : (hasMultipleDatasets || isPieOrRadar);
+
+    // Auto-generate distinct colors for each bar/slice if not explicitly given
+    const autoColors = options.colors || (isPieOrRadar || options.horizontal || options.multiColors ? CONTRAST_PALETTE.slice(0, labels.length) : '#1976d2');
 
     charts[id] = new Chart(ctx, {
         type,
         data: {
             labels,
             datasets: options.datasets ? options.datasets : [{
-                label: options.datasetLabel || 'Số lượng phản hồi',
+                label: options.datasetLabel || 'Số lượng',
                 data,
-                backgroundColor: options.colors || GREEN,
-                borderColor: options.borderColor,
-                borderWidth: options.borderWidth || 1
+                backgroundColor: autoColors,
+                borderColor: isPieOrRadar ? '#ffffff' : (options.borderColor || 'transparent'),
+                borderWidth: isPieOrRadar ? 2 : (options.borderWidth || 0),
+                borderRadius: type === 'bar' ? 4 : 0
             }]
         },
         options: {
@@ -580,19 +597,19 @@ function drawChart(id, type, labels, data, options = {}) {
                 legend: {
                     display: showLegend,
                     position: type === 'doughnut' || type === 'pie' ? 'right' : 'top',
-                    labels: { font: { size: 11 }, boxWidth: 12 }
+                    labels: { font: { size: 11, weight: '500' }, boxWidth: 14, padding: 10 }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             const val = context.raw;
-                            return (options.tooltipPrefix || '') + val + (options.tooltipSuffix || '');
+                            return (options.tooltipPrefix || '') + (context.dataset.label ? context.dataset.label + ': ' : '') + val + (options.tooltipSuffix || '');
                         }
                     }
                 }
             },
             scales: type === 'bar' ? {
-                x: options.horizontal ? { beginAtZero: true, ticks: { precision: 0, stepSize: options.stepSize || 1 } } : {},
+                x: options.horizontal ? { beginAtZero: true, ticks: { precision: 0, stepSize: options.stepSize || 1 } } : { ticks: { autoSkip: false } },
                 y: options.horizontal ? {} : { beginAtZero: true, min: options.min, max: options.max, ticks: { precision: options.precision !== undefined ? options.precision : (options.max ? 1 : 0), stepSize: options.stepSize || 1 } }
             } : {},
             indexAxis: options.horizontal ? 'y' : 'x'
@@ -605,9 +622,14 @@ function renderAllCharts() {
 
     // --- TAB 1: OVERVIEW ---
     const a2C = countSingle('a2');
-    drawChart('ov-a2', 'doughnut', Object.keys(a2C), Object.values(a2C));
+    drawChart('ov-a2', 'doughnut', Object.keys(a2C), Object.values(a2C), { colors: CONTRAST_PALETTE });
+    
     const b2C = countSingle('b2');
-    drawChart('ov-b2', 'bar', Object.keys(b2C), Object.values(b2C), { showLegend: false });
+    drawChart('ov-b2', 'bar', Object.keys(b2C), Object.values(b2C), {
+        colors: ['#78909c', '#42a5f5', '#26a69a', '#2e7d32'],
+        multiColors: true,
+        showLegend: false
+    });
 
     // Radar Khối D
     const dFactors = [
@@ -632,49 +654,88 @@ function renderAllCharts() {
         datasets: [{
             label: 'Điểm Trung Bình (Thang 1-7)',
             data: radarAvgs,
-            backgroundColor: 'rgba(46, 125, 50, 0.25)',
-            borderColor: '#2e7d32',
-            pointBackgroundColor: '#1b5e20',
-            pointBorderColor: '#fff'
+            backgroundColor: 'rgba(25, 118, 210, 0.25)',
+            borderColor: '#1565c0',
+            borderWidth: 2,
+            pointBackgroundColor: '#d32f2f',
+            pointBorderColor: '#ffffff',
+            pointRadius: 5
         }],
         showLegend: true
     });
 
-    // YD bar
+    // YD bar (Khối D6)
     const ydAvgs = [21, 22, 23].map(idx => {
         const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
-    drawChart('ov-yd', 'bar', ['YD1: Ý định', 'YD2: Dự kiến', 'YD3: Kế hoạch'], ydAvgs, {
-        max: 7, showLegend: false, colors: ['#2e7d32', '#388e3c', '#43a047']
+    drawChart('ov-yd', 'bar', ['YD1: Ý định áp dụng', 'YD2: Dự kiến áp dụng', 'YD3: Kế hoạch áp dụng'], ydAvgs, {
+        max: 7, showLegend: false, colors: ['#1976d2', '#7b1fa2', '#2e7d32'], multiColors: true
     });
 
     // --- TAB 2: KHỐI A & B ---
-    const a1C = countSingle('a1'); drawChart('ch-a1', 'doughnut', Object.keys(a1C), Object.values(a1C));
-    drawChart('ch-a2', 'bar', Object.keys(a2C), Object.values(a2C), { showLegend: false });
-    const a3C = countSingle('a3'); drawChart('ch-a3', 'pie', Object.keys(a3C), Object.values(a3C));
-    const a4C = countSingle('a4'); drawChart('ch-a4', 'doughnut', Object.keys(a4C), Object.values(a4C));
-    const a5C = countSingle('a5'); drawChart('ch-a5', 'bar', Object.keys(a5C), Object.values(a5C), { showLegend: false });
-    const a6C = countSingle('a6'); drawChart('ch-a6', 'bar', Object.keys(a6C), Object.values(a6C), { showLegend: false });
+    const a1C = countSingle('a1'); 
+    drawChart('ch-a1', 'doughnut', Object.keys(a1C), Object.values(a1C), { colors: ['#2e7d32', '#e53935', '#f57c00'] });
+    
+    drawChart('ch-a2', 'bar', Object.keys(a2C), Object.values(a2C), { multiColors: true, colors: CONTRAST_PALETTE, showLegend: false });
+    
+    const a3C = countSingle('a3'); 
+    drawChart('ch-a3', 'pie', Object.keys(a3C), Object.values(a3C), { colors: ['#42a5f5', '#26a69a', '#fbc02d', '#e53935'] });
+    
+    const a4C = countSingle('a4'); 
+    drawChart('ch-a4', 'doughnut', Object.keys(a4C), Object.values(a4C), { colors: ['#8e24aa', '#3949ab', '#00acc1', '#fb8c00', '#78909c'] });
+    
+    const a5C = countSingle('a5'); 
+    drawChart('ch-a5', 'bar', Object.keys(a5C), Object.values(a5C), { colors: ['#90a4ae', '#42a5f5', '#26a69a', '#43a047', '#1b5e20'], multiColors: true, showLegend: false });
+    
+    const a6C = countSingle('a6'); 
+    drawChart('ch-a6', 'bar', Object.keys(a6C), Object.values(a6C), { colors: ['#90a4ae', '#64b5f6', '#4db6ac', '#81c784', '#2e7d32'], multiColors: true, showLegend: false });
 
-    const b1C = countSingle('b1'); drawChart('ch-b1', 'doughnut', Object.keys(b1C), Object.values(b1C));
-    drawChart('ch-b2', 'bar', Object.keys(b2C), Object.values(b2C), { showLegend: false });
-    const b3C = countSingle('b3'); drawChart('ch-b3', 'bar', Object.keys(b3C), Object.values(b3C), { showLegend: false });
+    // B1: Nhận thức (Có / Không)
+    const b1C = countSingle('b1'); 
+    const b1Colors = Object.keys(b1C).map(k => k.includes('Đã từng') ? '#2e7d32' : '#d32f2f');
+    drawChart('ch-b1', 'doughnut', Object.keys(b1C), Object.values(b1C), { colors: b1Colors });
+    
+    drawChart('ch-b2', 'bar', Object.keys(b2C), Object.values(b2C), { colors: ['#78909c', '#42a5f5', '#26a69a', '#2e7d32'], multiColors: true, showLegend: false });
+    
+    const b3C = countSingle('b3'); 
+    drawChart('ch-b3', 'bar', Object.keys(b3C), Object.values(b3C), { colors: ['#78909c', '#ffb74d', '#fb8c00', '#26a69a', '#2e7d32'], multiColors: true, showLegend: false });
 
     // --- TAB 3: KHỐI C1-C11 ---
-    const c1C = countSingle('c1'); drawChart('ch-c1', 'bar', Object.keys(c1C), Object.values(c1C), { showLegend: false });
-    const c2C = countMulti('c2'); drawChart('ch-c2', 'bar', Object.keys(c2C), Object.values(c2C), { showLegend: false, horizontal: true });
-    const c3C = countMulti('c3'); drawChart('ch-c3', 'bar', Object.keys(c3C), Object.values(c3C), { showLegend: false, horizontal: true });
-    const c4C = countMulti('c4'); drawChart('ch-c4', 'bar', Object.keys(c4C), Object.values(c4C), { showLegend: false, horizontal: true });
-    const c5C = countSingle('c5'); drawChart('ch-c5', 'doughnut', Object.keys(c5C), Object.values(c5C));
-    const c6C = countSingle('c6'); drawChart('ch-c6', 'bar', Object.keys(c6C), Object.values(c6C), { showLegend: false });
-    const c7C = countSingle('c7'); drawChart('ch-c7', 'bar', Object.keys(c7C), Object.values(c7C), { showLegend: false, horizontal: true });
-    const c8C = countMulti('c8'); drawChart('ch-c8', 'bar', Object.keys(c8C), Object.values(c8C), { showLegend: false, horizontal: true });
-    const c9C = countMulti('c9'); drawChart('ch-c9', 'bar', Object.keys(c9C), Object.values(c9C), { showLegend: false, horizontal: true });
-    const c10C = countMulti('c10'); drawChart('ch-c10', 'bar', Object.keys(c10C), Object.values(c10C), { showLegend: false, horizontal: true });
-    const c11C = countMulti('c11'); drawChart('ch-c11', 'bar', Object.keys(c11C), Object.values(c11C), { showLegend: false, horizontal: true });
+    const c1C = countSingle('c1'); 
+    drawChart('ch-c1', 'bar', Object.keys(c1C), Object.values(c1C), { colors: ['#90a4ae', '#42a5f5', '#7e57c2', '#26a69a', '#2e7d32'], multiColors: true, showLegend: false });
+    
+    const c2C = countMulti('c2'); 
+    drawChart('ch-c2', 'bar', Object.keys(c2C), Object.values(c2C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c3C = countMulti('c3'); 
+    drawChart('ch-c3', 'bar', Object.keys(c3C), Object.values(c3C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c4C = countMulti('c4'); 
+    drawChart('ch-c4', 'bar', Object.keys(c4C), Object.values(c4C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c5C = countSingle('c5'); 
+    drawChart('ch-c5', 'doughnut', Object.keys(c5C), Object.values(c5C), { colors: ['#90a4ae', '#42a5f5', '#26a69a', '#2e7d32'] });
+    
+    const c6C = countSingle('c6'); 
+    drawChart('ch-c6', 'bar', Object.keys(c6C), Object.values(c6C), { colors: ['#90a4ae', '#42a5f5', '#00acc1', '#fb8c00', '#2e7d32'], multiColors: true, showLegend: false });
+    
+    const c7C = countSingle('c7'); 
+    drawChart('ch-c7', 'bar', Object.keys(c7C), Object.values(c7C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c8C = countMulti('c8'); 
+    drawChart('ch-c8', 'bar', Object.keys(c8C), Object.values(c8C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c9C = countMulti('c9'); 
+    drawChart('ch-c9', 'bar', Object.keys(c9C), Object.values(c9C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c10C = countMulti('c10'); 
+    drawChart('ch-c10', 'bar', Object.keys(c10C), Object.values(c10C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    
+    const c11C = countMulti('c11'); 
+    drawChart('ch-c11', 'bar', Object.keys(c11C), Object.values(c11C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
 
-    // --- TAB 4: KHỐI C12 GAP ANALYSIS ---
+    // --- TAB 4: KHỐI C12 GAP ANALYSIS (TƯƠNG PHẢN XANH LAM vs CAM SAN HÔ) ---
     const qtAvgs = [], scAvgs = [];
     for (let i = 1; i <= 10; i++) {
         const qts = allData.map(r => parseFloat(r.response_data?.[`c12_qt_${i}`])).filter(v => !isNaN(v));
@@ -684,8 +745,8 @@ function renderAllCharts() {
     }
     drawChart('ch-c12-gap', 'bar', C12_LABELS.map((_, i) => `TL${i+1}`), [], {
         datasets: [
-            { label: 'Mức Độ Quan Trọng (QT)', data: qtAvgs, backgroundColor: '#2e7d32' },
-            { label: 'Hiện Trạng Sẵn Có (SC)', data: scAvgs, backgroundColor: '#f57c00' }
+            { label: 'Mức Độ Quan Trọng (QT)', data: qtAvgs, backgroundColor: '#1565c0', borderColor: '#0d47a1', borderWidth: 1 },
+            { label: 'Hiện Trạng Sẵn Có (SC)', data: scAvgs, backgroundColor: '#f57c00', borderColor: '#e65100', borderWidth: 1 }
         ],
         max: 5,
         stepSize: 1
@@ -701,15 +762,15 @@ function renderAllCharts() {
             return `<tr>
                 <td><b>TL${i+1}</b></td>
                 <td>${label}</td>
-                <td style="text-align:center;font-weight:700;color:#2e7d32">${qt}</td>
+                <td style="text-align:center;font-weight:700;color:#1565c0">${qt}</td>
                 <td style="text-align:center;font-weight:700;color:#f57c00">${sc}</td>
-                <td style="text-align:center;font-weight:700;color:${gap > 0 ? '#d32f2f' : '#388e3c'}">${gap > 0 ? '+'+gap : gap}</td>
+                <td style="text-align:center;font-weight:700;color:${gap > 0 ? '#d32f2f' : '#2e7d32'}">${gap > 0 ? '+'+gap : gap}</td>
             </tr>`;
         }).join('');
     }
 
     // --- TAB 5: KHỐI C13 & C14 ---
-    // C13 Ranking
+    // C13 Ranking: Tương phản theo mức độ nghiêm trọng
     const c13Stats = C13_CODES.map((item, idx) => {
         const vals = allData.map(r => parseFloat(r.response_data?.[`c13_${idx+1}`])).filter(v => !isNaN(v));
         const avg = vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
@@ -718,37 +779,39 @@ function renderAllCharts() {
 
     drawChart('ch-c13-ranking', 'bar', c13Stats.map(s => `${s.code}: ${s.name}`), c13Stats.map(s => s.avg), {
         horizontal: true, max: 5, showLegend: false,
-        colors: c13Stats.map(s => s.avg >= 4 ? '#d32f2f' : (s.avg >= 3 ? '#f57c00' : '#388e3c'))
+        colors: c13Stats.map(s => s.avg >= 4 ? '#d32f2f' : (s.avg >= 3.2 ? '#f57c00' : '#1976d2'))
     });
 
-    // C14 NCT
+    // C14 NCT (Thang 1-5)
     const nctAvgs = [1, 2, 3].map(i => {
         const vals = allData.map(r => parseFloat(r.response_data?.[`c14_${i}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
-    drawChart('ch-c14-nct', 'bar', ['NCT1: Cần công cụ liên kết', 'NCT2: Công cụ là điều kiện', 'NCT3: Tăng khả năng tham gia'], nctAvgs, { max: 5, showLegend: false });
+    drawChart('ch-c14-nct', 'bar', ['NCT1: Cần công cụ liên kết', 'NCT2: Công cụ là điều kiện', 'NCT3: Tăng khả năng tham gia'], nctAvgs, {
+        max: 5, showLegend: false, colors: ['#0288d1', '#00897b', '#7b1fa2'], multiColors: true
+    });
 
-    const gp1C = countMulti('gp1'); drawChart('ch-gp1', 'bar', Object.keys(gp1C), Object.values(gp1C), { showLegend: false, horizontal: true });
-    const gp2C = countMulti('gp2'); drawChart('ch-gp2', 'bar', Object.keys(gp2C), Object.values(gp2C), { showLegend: false, horizontal: true });
-    const gp3C = countMulti('gp3'); drawChart('ch-gp3', 'bar', Object.keys(gp3C), Object.values(gp3C), { showLegend: false, horizontal: true });
+    const gp1C = countMulti('gp1'); drawChart('ch-gp1', 'bar', Object.keys(gp1C), Object.values(gp1C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    const gp2C = countMulti('gp2'); drawChart('ch-gp2', 'bar', Object.keys(gp2C), Object.values(gp2C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
+    const gp3C = countMulti('gp3'); drawChart('ch-gp3', 'bar', Object.keys(gp3C), Object.values(gp3C), { showLegend: false, horizontal: true, multiColors: true, colors: CONTRAST_PALETTE });
 
-    // --- TAB 6: KHỐI D SEM (1-7) ---
-    const drawLikertGroup = (id, indices, labels) => {
+    // --- TAB 6: KHỐI D SEM (1-7) - MỖI NHÂN TỐ 1 MÀU CHỦ ĐẠO RÕ RÀNG ---
+    const drawLikertGroup = (id, indices, labels, baseColor) => {
         const avgs = indices.map(idx => {
             const vals = allData.map(r => parseFloat(r.response_data?.[`d_${idx}`])).filter(v => !isNaN(v));
             return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
         });
-        drawChart(id, 'bar', labels, avgs, { max: 7, showLegend: false, colors: ['#2e7d32','#388e3c','#43a047','#66bb6a'] });
+        drawChart(id, 'bar', labels, avgs, { max: 7, showLegend: false, colors: baseColor });
     };
 
-    drawLikertGroup('ch-d-kt', [1,2,3,4], ['KT1', 'KT2', 'KT3', 'KT4']);
-    drawLikertGroup('ch-d-ql', [5,6,7,8], ['QL1', 'QL2', 'QL3', 'QL4']);
-    drawLikertGroup('ch-d-tt', [9,10,11,12], ['TT1', 'TT2', 'TT3', 'TT4']);
-    drawLikertGroup('ch-d-li', [13,14,15,16], ['LI1', 'LI2', 'LI3', 'LI4']);
-    drawLikertGroup('ch-d-cs', [17,18,19,20], ['CS1', 'CS2', 'CS3', 'CS4']);
-    drawLikertGroup('ch-d-yd', [21,22,23], ['YD1', 'YD2', 'YD3']);
+    drawLikertGroup('ch-d-kt', [1,2,3,4], ['KT1', 'KT2', 'KT3', 'KT4'], '#1976d2'); // Kỹ thuật: Blue
+    drawLikertGroup('ch-d-ql', [5,6,7,8], ['QL1', 'QL2', 'QL3', 'QL4'], '#7b1fa2'); // Quản lý: Purple
+    drawLikertGroup('ch-d-tt', [9,10,11,12], ['TT1', 'TT2', 'TT3', 'TT4'], '#f57c00'); // Thị trường: Orange
+    drawLikertGroup('ch-d-li', [13,14,15,16], ['LI1', 'LI2', 'LI3', 'LI4'], '#2e7d32'); // Lợi ích: Green
+    drawLikertGroup('ch-d-cs', [17,18,19,20], ['CS1', 'CS2', 'CS3', 'CS4'], '#0097a7'); // Chính sách: Teal
+    drawLikertGroup('ch-d-yd', [21,22,23], ['YD1', 'YD2', 'YD3'], '#c2185b'); // Ý định: Deep Pink
 
-    // --- TAB 7: KHỐI E & F ---
+    // --- TAB 7: KHỐI E & F (ĐỐI CHIẾU XANH BIỂN vs XANH LÁ) ---
     const lipAvgs = [1,2,3,4,5,6].map(i => {
         const vals = allData.map(r => parseFloat(r.response_data?.[`e_${i}`])).filter(v => !isNaN(v));
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
@@ -758,20 +821,25 @@ function renderAllCharts() {
         return vals.length ? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
     });
 
-    drawChart('ch-ef-compare', 'bar', ['Mục 1: Nhận diện nguồn carbon', 'Mục 2: Lựa chọn vật liệu thấp', 'Mục 3: Rút ngắn thời gian', 'Mục 4: Cân bằng chi phí/carbon', 'Mục 5: Đáp ứng chứng nhận', 'Mục 6: Nâng cao cạnh tranh'], [], {
+    drawChart('ch-ef-compare', 'bar', ['1: Nguồn carbon', '2: Chọn vật liệu', '3: Rút ngắn thời gian', '4: Cân bằng chi phí', '5: Đạt chứng nhận', '6: Tăng cạnh tranh'], [], {
         datasets: [
-            { label: 'Kỳ Vọng (LIP - Khối E)', data: lipAvgs, backgroundColor: '#2e7d32' },
-            { label: 'Thực Tế Đạt Được (ROP - Khối F)', data: ropAvgs, backgroundColor: '#1976d2' }
+            { label: 'Kỳ Vọng (LIP - Khối E)', data: lipAvgs, backgroundColor: '#1565c0', borderColor: '#0d47a1', borderWidth: 1 },
+            { label: 'Thực Tế Đạt Được (ROP - Khối F)', data: ropAvgs, backgroundColor: '#2e7d32', borderColor: '#1b5e20', borderWidth: 1 }
         ],
         max: 5
     });
 
-    drawChart('ch-e-detail', 'bar', ['LIP1','LIP2','LIP3','LIP4','LIP5','LIP6'], lipAvgs, { max: 5, showLegend: false });
-    drawChart('ch-f-detail', 'bar', ['ROP1','ROP2','ROP3','ROP4','ROP5','ROP6'], ropAvgs, { max: 5, showLegend: false, colors: ['#1976d2'] });
+    drawChart('ch-e-detail', 'bar', ['LIP1','LIP2','LIP3','LIP4','LIP5','LIP6'], lipAvgs, { max: 5, showLegend: false, colors: '#1565c0' });
+    drawChart('ch-f-detail', 'bar', ['ROP1','ROP2','ROP3','ROP4','ROP5','ROP6'], ropAvgs, { max: 5, showLegend: false, colors: '#2e7d32' });
 
-    // --- TAB 8: KHỐI G ---
+    // --- TAB 8: KHỐI G (PHỎNG VẤN) ---
     const i4C = countSingle('i4');
-    drawChart('ch-g-i4', 'doughnut', Object.keys(i4C), Object.values(i4C));
+    const i4Colors = Object.keys(i4C).map(k => {
+        if (k === 'Có') return '#2e7d32'; // Green
+        if (k === 'Không') return '#d32f2f'; // Red
+        return '#f57c00'; // Orange
+    });
+    drawChart('ch-g-i4', 'doughnut', Object.keys(i4C), Object.values(i4C), { colors: i4Colors });
 }
 
 function renderTables() {
