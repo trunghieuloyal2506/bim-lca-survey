@@ -396,7 +396,7 @@
                     <table id="tbl-interview">
                         <thead>
                             <tr>
-                                <th>#</th><th>Thời gian</th><th>Vai trò</th><th>Kinh nghiệm</th><th>Sẵn sàng</th><th>Thông tin liên hệ (I5)</th>
+                                <th>#</th><th>Thời gian</th><th>Họ và Tên</th><th>Vai trò</th><th>Kinh nghiệm</th><th>Sẵn sàng</th><th>Thông tin liên hệ (I5)</th>
                             </tr>
                         </thead>
                         <tbody id="tbl-interview-body"></tbody>
@@ -418,7 +418,7 @@
                 <table id="main-table">
                     <thead>
                         <tr>
-                            <th>#</th><th>Thời gian</th><th>Vai trò (A2)</th><th>Kinh nghiệm (A3)</th><th>Quy mô (A4)</th>
+                            <th>#</th><th>Thời gian</th><th>Họ và Tên</th><th>Vai trò (A2)</th><th>Kinh nghiệm (A3)</th><th>Quy mô (A4)</th>
                             <th>BIM (A5)</th><th>Biết BIM-LCA (B1)</th><th>Quen thuộc (B2)</th><th>Kế hoạch (B3)</th>
                             <th>Mức độ (C7)</th><th>YD1</th><th>YD2</th><th>YD3</th><th>Phỏng vấn</th>
                         </tr>
@@ -868,12 +868,14 @@ function renderTables() {
     const tbody = document.getElementById('table-body');
     if (tbody) {
         tbody.innerHTML = allData.length === 0
-            ? '<tr><td colspan="14" style="text-align:center;color:#999;padding:30px">Chưa có dữ liệu khảo sát</td></tr>'
+            ? '<tr><td colspan="15" style="text-align:center;color:#999;padding:30px">Chưa có dữ liệu khảo sát</td></tr>'
             : allData.map((r, i) => {
                 const rd = r.response_data || {};
+                const nameDisplay = rd.fullname ? `<b style="color:#1b5e20">${rd.fullname}</b>` : `<span style="color:#999;font-style:italic">(Ẩn danh)</span>`;
                 return `<tr onclick="showDetail(${i})">
                     <td><b>${i+1}</b></td>
                     <td style="white-space:nowrap">${new Date(r.submitted_at).toLocaleString('vi-VN')}</td>
+                    <td style="white-space:nowrap">${nameDisplay}</td>
                     <td class="truncate" title="${r.a2||''}">${r.a2||'—'}</td>
                     <td>${r.a3||'—'}</td>
                     <td class="truncate" title="${r.a4||''}">${r.a4||'—'}</td>
@@ -895,11 +897,12 @@ function renderTables() {
     if (intTbody) {
         const interviewList = allData.filter(r => r.response_data?.i4 && r.response_data.i4 !== 'Không');
         intTbody.innerHTML = interviewList.length === 0
-            ? '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px">Chưa có người đồng ý phỏng vấn</td></tr>'
+            ? '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px">Chưa có người đồng ý phỏng vấn</td></tr>'
             : interviewList.map((r, i) => `
                 <tr>
                     <td>${i+1}</td>
                     <td>${new Date(r.submitted_at).toLocaleDateString('vi-VN')}</td>
+                    <td><b>${r.response_data?.fullname || '<i style="color:#999;font-weight:normal">(Chưa ghi nhận)</i>'}</b></td>
                     <td>${r.a2||'—'}</td>
                     <td>${r.a3||'—'}</td>
                     <td><span class="badge badge-blue">${r.response_data.i4}</span></td>
@@ -943,6 +946,7 @@ function showDetail(idx) {
     document.getElementById('modal-body').innerHTML = `
         <div class="field-group">
             <h4>Khối A – Thông Tin Chung & Sàng Lọc</h4>
+            ${row('Họ và Tên', rd.fullname || '(Khảo sát ẩn danh)')}
             ${row('A1: Kinh nghiệm dự án VN 5 năm', rd.a1)}
             ${row('A2: Vai trò chuyên môn chính', rd.a2)}
             ${rd.a2_other ? row('A2 Khác', rd.a2_other) : ''}
@@ -1094,6 +1098,7 @@ function buildFullFlatRow(r, i) {
         'STT': i + 1,
         'Mã_phản_hồi': r.id,
         'Thời_gian_nộp': new Date(r.submitted_at).toLocaleString('vi-VN'),
+        'Họ_và_Tên': rd.fullname || '(Khảo sát ẩn danh)',
         'Đồng_ý_tham_gia': rd.consent || '',
         'A1_Kinh_nghiệm_VN_5_năm': rd.a1 || '',
         'A2_Vai_trò_chuyên_môn': rd.a2 || '',
