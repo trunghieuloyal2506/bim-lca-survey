@@ -355,6 +355,13 @@
         <div class="section" id="sec-a">
             <h2 class="section-title">KHỐI A – SÀNG LỌC VÀ THÔNG TIN CHUNG</h2>
             
+            <div class="question" data-id="fullname">
+                <div class="question-title required">Họ và Tên của Anh/Chị:</div>
+                <div class="question-desc" style="color: #666; font-size: 0.85rem; margin-bottom: 8px;">(Thông tin phục vụ công tác đối chiếu mẫu và nghiên cứu của NCS Huỳnh Trung Hiếu)</div>
+                <input type="text" name="fullname" placeholder="Nhập đầy đủ Họ và Tên của Anh/Chị..." style="width: 100%; max-width: 480px; padding: 10px 14px; border: 1.5px solid #ccc; border-radius: 6px; font-size: 0.95rem;">
+                <div class="error-message">Vui lòng nhập Họ và Tên của Anh/Chị.</div>
+            </div>
+
             <div class="question" data-id="a1">
                 <div class="question-title required">A1: Anh/Chị hiện đang làm việc hoặc đã tham gia dự án xây dựng tại Việt Nam trong 5 năm gần đây?</div>
                 <div class="options-group">
@@ -1023,6 +1030,14 @@
             const checked = section.querySelector(`input[name="${name}"]:checked`);
             if (!checked) invalidNames.add(name);
         });
+
+        // Check fullname in section A
+        if (sectionId === 'sec-a') {
+            const fnInput = section.querySelector('input[name="fullname"]');
+            if (fnInput && !fnInput.value.trim()) {
+                invalidNames.add('fullname');
+            }
+        }
 
         // Check required checkbox groups explicitly
         const requiredCheckboxGroups = ['c2', 'c3', 'c4', 'c8', 'c9', 'c10', 'c11', 'gp1', 'gp2', 'gp3'];
